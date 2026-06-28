@@ -126,9 +126,9 @@ fun DiscoveryScreen(
         )
         GenreFilterBar(selectedGenre = selectedGenre, onGenreSelected = { selectedGenre = it }, accentColor)
         
-        Spacer(modifier = Modifier.height(16.dp))
-        AiPlaylistGeneratorSection(viewModel, navController, accentColor)
-        Spacer(modifier = Modifier.height(16.dp))
+        // AI Playlist Generator Section (DISABLED)
+        // AiPlaylistGeneratorSection(viewModel, navController, accentColor)
+        // Spacer(modifier = Modifier.height(16.dp))
 
         TrendingSection(filteredTrending, viewModel, navController)
         NewReleasesSection(filteredReleases, viewModel, navController, accentColor)

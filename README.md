@@ -1,81 +1,79 @@
-# mscraper
+# Crysta (mscraper)
 
-A multi‑platform download manager for Android and Linux built on the **mm‑dlp** Rust core.
+A multi‑platform cyberpunk-themed music player and download manager for Android and Linux built on a high-performance Rust core.
 
 ## Overview
 
-`mscraper` integrates the high‑performance `mm-dlp` download engine (written in Rust) with a Kotlin/Android front‑end via **JNA**.  The same native library can also be used on Linux desktops, making the download manager truly cross‑platform.
+**Crysta** (developed as `mscraper`) integrates a high‑performance Rust download engine (`mm-dlp`) with a modern Kotlin/Compose Android front‑end. Featuring a unique cyberpunk aesthetic with glassmorphism effects and real-time visualizers, it provides a premium experience for managing and enjoying your music library.
 
-- **Fast, reliable downloads** – leverages Rust's async runtime and zero‑copy buffers.
-- **Unified API** – the Kotlin `MmDlpEngine` wrapper exposes the same methods on Android and Linux.
-- **Progress tracking** – state flows are exposed to the UI for smooth progress animations.
-- **Extensible** – you can add additional download protocols by extending the Rust core.
+- **High-Performance Rust Core** – Leverages Rust's async runtime and zero‑copy buffers for fast, reliable data processing.
+- **Cyberpunk UI** – Beautifully crafted glassmorphism interface with neon accents, CRT scanline effects, and dynamic audio visualizers.
+- **Unified Native Engine** – The `MmDlpEngine` wrapper allows the same core logic to run on both Android and Linux desktops.
+- **Extensible Architecture** – Modular design allows for easy addition of new protocols or UI components.
+- **Offline First** – Robust local database and settings management with built-in backup and restore support.
 
 ## Project Structure
 
 ```
 mscraper/
-├─ app/                     # Android application module
-│   ├─ src/main/kotlin/com/example/core/
-│   │   ├─ DownloadManager.kt   # Orchestrates UI ↔ native engine
-│   │   ├─ MmDlpEngine.kt       # JNA wrapper around the Rust library
-│   │   └─ NativeLibLoader.kt   # Loads the native .so on Android or Linux
-│   └─ src/main/jniLibs/arm64-v8a/libmm_dlp_core.so   # Pre‑built Android library
+├─ app/                     # Android application module (Crysta UI)
+│   ├─ src/main/java/com/example/ui/      # Compose UI, Themes, and Components
+│   ├─ src/main/java/com/example/core/    # Native bridge and Logic
+│   └─ src/main/res/xml/                  # Backup and Data rules
 ├─ mm-dlp/                  # Rust library (git submodule)
-│   └─ ...
-└─ README.md                # *this file*
+├─ LICENSE                  # MIT License details
+├─ DISCLAIMER.md            # Usage and legal disclaimer
+└─ README.md                # This file
 ```
 
 ## Prerequisites
 
-- **Android**: Android Studio, JDK 11+, Gradle 8+, an Android device or emulator.
-- **Linux**: A recent Linux distribution (x86_64 or aarch64), JDK 11+, Gradle 8+.
-- **Rust toolchain**: `rustup` with the targets `aarch64-linux-android` (for Android) and `x86_64-unknown-linux-gnu` (for Linux).
+- **Android**: Android Studio Jellyfish+, JDK 17+, Gradle 8.4+, Android device (API 26+).
+- **Linux**: Recent distribution (Ubuntu 22.04+ recommended), JDK 17+.
+- **Rust**: `rustup` with targets `aarch64-linux-android` and `x86_64-unknown-linux-gnu`.
 
-## Building for Android
+## Building and Development
 
-```bash
-# Build the Rust library for Android
-cd mm-dlp
-cargo build --release --target aarch64-linux-android
-# Copy the generated .so into the Android module
-cp target/aarch64-linux-android/release/libmm_dlp_core.so ../mscraper/app/src/main/jniLibs/arm64-v8a/
+### Android App
 
-# Build the Android app
-cd ../mscraper/app
-./gradlew assembleDebug   # or assembleRelease for a signed APK
-```
+1. Build the Rust core for Android:
+   ```bash
+   cd mm-dlp
+   cargo build --release --target aarch64-linux-android
+   cp target/aarch64-linux-android/release/libmm_dlp_core.so ../app/src/main/jniLibs/arm64-v8a/
+   ```
+2. Open the project in Android Studio or build via CLI:
+   ```bash
+   ./gradlew :app:assembleDebug
+   ```
 
-The app can now be installed on a device or launched from Android Studio.
+### Linux Desktop Demo
 
-## Building for Linux (desktop)
-
-1. **Build the native library**
+1. Build for Linux:
    ```bash
    cd mm-dlp
    cargo build --release --target x86_64-unknown-linux-gnu
-   # The output is libmm_dlp_core.so in target/x86_64-unknown-linux-gnu/release/
+   mkdir -p ../app/src/main/resources/linux
+   cp target/x86_64-unknown-linux-gnu/release/libmm_dlp_core.so ../app/src/main/resources/linux/
    ```
-2. **Package the library with the Kotlin demo**
+2. Run the console demo:
    ```bash
-   # Copy the .so to resources so the loader can find it at runtime
-   mkdir -p ../mscraper/app/src/main/resources/linux
-   cp target/x86_64-unknown-linux-gnu/release/libmm_dlp_core.so ../mscraper/app/src/main/resources/linux/
+   ./gradlew runLinuxDemo
    ```
-3. **Run the Linux demo (console application)**
-   ```bash
-   cd ../mscraper/app
-   ./gradlew runLinuxDemo   # a custom Gradle task defined in build.gradle.kts
-   ```
-   The demo will start a small download and print progress to the console.
+
+## Documentation
+
+- **UI Polish**: The interface uses customized `GlassCard` and `CRTEffect` components for its signature look.
+- **Backup & Restore**: User settings and library data are handled via Android's `data-extraction-rules.xml`.
+- **Legal**: Please review the [DISCLAIMER.md](DISCLAIMER.md) before use.
 
 ## License
 
-The project is licensed under the **MIT License** – see the `LICENSE` file for the full text.
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for the full license text.
 
 ## Disclaimer
 
-The software is provided **as‑is**, without any warranties of any kind, express or implied. The authors are not liable for any damages arising from the use of this software. Use at your own risk.
+**Educational Use Only.** The authors are not responsible for any misuse of this tool. Users must comply with all applicable laws and terms of service. See [DISCLAIMER.md](DISCLAIMER.md) for details.
 
 ---
-*For more detailed contribution guidelines and architecture diagrams, refer to the project wiki.*
+*Developed with ❤️ by the Crysta Project Contributors.*
