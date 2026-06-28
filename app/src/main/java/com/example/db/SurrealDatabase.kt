@@ -19,7 +19,8 @@ class SurrealDatabase(private val context: Context) {
             val db = prefs.getString("database", "music") ?: "music"
             driver.use(ns, db)
 
-            // If it's a remote connection, we might need to sign in
+            // For SurrealDB v3+, embedded file mode doesn't strictly require signin if it's local only,
+            // but we'll provide the option for remote/auth-enabled setups.
             if (endpoint.startsWith("ws") || endpoint.startsWith("http")) {
                 val user = prefs.getString("username", "root") ?: "root"
                 val pass = prefs.getString("password", "root") ?: "root"

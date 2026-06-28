@@ -1,257 +1,146 @@
 package com.example.core
 
 import android.content.Context
-import android.util.Base64
+import com.example.db.SurrealDatabase
 import com.example.model.PlaylistEntity
 import com.example.model.TrackEntity
+import com.surrealdb.driver.Surreal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.ConnectionPool
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
-import java.util.concurrent.TimeUnit
 
 class SurrealDbService(context: Context) {
 
-    private val prefs = context.getSharedPreferences("surreal_sync_prefs", Context.MODE_PRIVATE)
-
-    // Robust Connection Pool configuration to manage multiple asynchronous database connections efficiently
-    private val connectionPool = ConnectionPool(10, 5, TimeUnit.MINUTES)
-
-    private val client = OkHttpClient.Builder()
-        .connectionPool(connectionPool)
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
-        .writeTimeout(15, TimeUnit.SECONDS)
-        .build()
-
-    // Configuration Accessors
-    fun getEndpoint(): String = prefs.getString("endpoint", "http://10.0.2.2:8000") ?: "http://10.0.2.2:8000"
-    fun getNamespace(): String = prefs.getString("namespace", "crysta") ?: "crysta"
-    fun getDatabase(): String = prefs.getString("database", "music") ?: "music"
-    fun getUsername(): String = prefs.getString("username", "root") ?: "root"
-    fun getPassword(): String = prefs.getString("password", "root") ?: "root"
+    private val db = SurrealDatabase.getInstance(context)
+    private val driver: Surreal get() = db.getDriver()
 
     /**
      * Initializes SurrealDB database schema asynchronously upon application launch.
-     * Sets up table definitions for tracks, playlists, contains relation, and settings,
-     * then executes database version migrations inside a single transaction to maintain structural integrity.
      */
-    suspend fun initializeDatabase(): Result<String> {
-        val querySetup = """
-            -- Setup schema definitions for music library
-            DEFINE TABLE db_meta SCHEMALESS;
-            DEFINE TABLE track SCHEMALESS;
-            DEFINE TABLE playlist SCHEMALESS;
-            DEFINE TABLE contains SCHEMALESS;
-            DEFINE TABLE settings SCHEMALESS;
-            
-            -- Ensure basic indices exist for fast retrieval
-            DEFINE INDEX trackId ON TABLE track COLUMNS id UNIQUE;
-            DEFINE INDEX playlistId ON TABLE playlist COLUMNS id UNIQUE;
-        """.trimIndent()
-
-        val setupResult = runQuery(querySetup)
-        if (setupResult.isFailure) return setupResult
-
-        return handleMigrations()
-    }
-
-    /**
-     * Helper to perform incremental migrations on top of SurrealDB schema versioning
-     */
-    private suspend fun handleMigrations(): Result<String> {
-        val checkVerQuery = "SELECT value FROM db_meta:schema_version;"
-        val res = runQuery(checkVerQuery)
-        var currentVersion = 0
-        res.onSuccess { body ->
-            try {
-                val arr = JSONArray(body)
-                if (arr.length() > 0) {
-                    val resultObj = arr.getJSONObject(0)
-                    val status = resultObj.optString("status")
-                    if (status == "OK") {
-                        val resultArr = resultObj.optJSONArray("result")
-                        if (resultArr != null && resultArr.length() > 0) {
-                            currentVersion = resultArr.getJSONObject(0).optInt("value", 0)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                // Keep version as 0 if DB or structure is brand new
-            }
-        }
-
-        val targetVersion = 2
-        val migrationQueries = mutableListOf<String>()
-
-        if (currentVersion < 1) {
-            migrationQueries.add("""
-                -- Migration V1: Add system configurations snapshot
-                INSERT INTO settings:system {
-                    id: 'system',
-                    initializedAt: time::now(),
-                    theme: 'CYAN',
-                    crossfadeEnabled: true,
-                    crossfadeDuration: 3.0
-                } ON DUPLICATE KEY UPDATE initializedAt = time::now();
-            """.trimIndent())
-        }
-
-        if (currentVersion < 2) {
-            migrationQueries.add("""
-                -- Migration V2: Setup rich analytics schema definitions on track table
-                DEFINE FIELD playCount ON TABLE track TYPE option<int>;
-                DEFINE FIELD lastPlayed ON TABLE track TYPE option<datetime>;
-            """.trimIndent())
-        }
-
-        if (migrationQueries.isNotEmpty()) {
-            val fullMigrationScript = StringBuilder().apply {
-                append("BEGIN TRANSACTION;\n")
-                migrationQueries.forEach { append(it).append("\n") }
-                append("UPDATE db_meta:schema_version SET value = $targetVersion;\n")
-                append("COMMIT TRANSACTION;")
-            }.toString()
-
-            val migrationResult = runQuery(fullMigrationScript)
-            if (migrationResult.isFailure) return migrationResult
-        }
-
-        return Result.success("Schema version $targetVersion successfully set up.")
-    }
-
-    /**
-     * Run SurrealQL script asynchronously on Dispatchers.IO
-     */
-    suspend fun runQuery(query: String): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun initializeDatabase(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val url = getEndpoint()
-            val cleanUrl = if (url.endsWith("/sql")) url else if (url.endsWith("/")) "${url}sql" else "$url/sql"
-            val auth = Base64.encodeToString("${getUsername()}:${getPassword()}".toByteArray(), Base64.NO_WRAP)
-            val mediaType = "text/plain".toMediaType()
-            val body = query.toRequestBody(mediaType)
+            db.connect().getOrThrow()
 
-            val request = Request.Builder()
-                .url(cleanUrl)
-                .post(body)
-                .addHeader("Accept", "application/json")
-                .addHeader("Authorization", "Basic $auth")
-                .addHeader("NS", getNamespace())
-                .addHeader("DB", getDatabase())
-                .build()
+            // Setup schema definitions for music library using v3 SDK query
+            val querySetup = """
+                -- Setup schema definitions for music library
+                DEFINE TABLE db_meta SCHEMALESS;
+                DEFINE TABLE track SCHEMALESS;
+                DEFINE TABLE playlist SCHEMALESS;
+                DEFINE TABLE contains SCHEMALESS;
+                DEFINE TABLE settings SCHEMALESS;
+                
+                -- Ensure basic indices exist for fast retrieval
+                DEFINE INDEX trackId ON TABLE track COLUMNS id UNIQUE;
+                DEFINE INDEX playlistId ON TABLE playlist COLUMNS id UNIQUE;
+            """.trimIndent()
 
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    val errorBody = response.body?.string() ?: ""
-                    Result.failure(Exception("SurrealDB Node Error ${response.code}: $errorBody"))
-                } else {
-                    val bodyStr = response.body?.string() ?: ""
-                    Result.success(bodyStr)
-                }
+            driver.query(querySetup, emptyMap(), Any::class.java)
+            handleMigrations().getOrThrow()
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun handleMigrations(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val currentVersion = try {
+                val results = driver.query("SELECT value FROM db_meta:schema_version;", emptyMap(), Map::class.java)
+                // v3 SDK returns results in a way we need to parse
+                // This is a simplified extraction logic
+                val firstResult = results.firstOrNull() as? Map<*, *>
+                (firstResult?.get("value") as? Number)?.toInt() ?: 0
+            } catch (e: Exception) {
+                0
             }
+
+            val targetVersion = 2
+            if (currentVersion < targetVersion) {
+                if (currentVersion < 1) {
+                    driver.query("""
+                        INSERT INTO settings:system {
+                            id: 'system',
+                            initializedAt: time::now(),
+                            theme: 'CYAN',
+                            crossfadeEnabled: true,
+                            crossfadeDuration: 3.0
+                        } ON DUPLICATE KEY UPDATE initializedAt = time::now();
+                    """.trimIndent(), emptyMap(), Any::class.java)
+                }
+
+                if (currentVersion < 2) {
+                    driver.query("""
+                        DEFINE FIELD playCount ON TABLE track TYPE option<int>;
+                        DEFINE FIELD lastPlayed ON TABLE track TYPE option<datetime>;
+                    """.trimIndent(), emptyMap(), Any::class.java)
+                }
+
+                driver.query("UPDATE db_meta:schema_version SET value = $targetVersion;", emptyMap(), Any::class.java)
+            }
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
     /**
-     * Index a single track using multi-model content features
+     * Index a single track using SurrealDB v3 SDK
      */
-    suspend fun indexTrack(track: TrackEntity): Result<String> {
-        val escapedId = track.id.escapeSurreal()
-        val query = """
-            UPDATE track:`$escapedId` CONTENT {
-                id: '$escapedId',
-                title: '${track.title.escapeSurreal()}',
-                artist: '${(track.artist ?: "").escapeSurreal()}',
-                album: '${(track.album ?: "").escapeSurreal()}',
-                duration: ${track.duration},
-                filePath: '${track.filePath.escapeSurreal()}',
-                fileSize: ${track.fileSize},
-                bitrate: ${track.bitrate},
-                format: '${track.format.escapeSurreal()}',
-                dateAdded: ${track.dateAdded},
-                indexedAt: time::now()
-            };
-        """.trimIndent()
-        return runQuery(query)
+    suspend fun indexTrack(track: TrackEntity): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            driver.upsert("track:${track.id}", track)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     /**
-     * Groups multiple track metadata updates into a single asynchronous SurrealDB transaction
-     * block to minimize HTTP request overhead, thread locking, and maximize IO throughput.
+     * Groups multiple track metadata updates into a single transaction block.
      */
-    suspend fun indexTracksBatch(tracks: List<TrackEntity>): Result<String> {
-        if (tracks.isEmpty()) return Result.success("[]")
+    suspend fun indexTracksBatch(tracks: List<TrackEntity>): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            // In v3+, we can use query with parameters for batch operations or just upsert in a loop if transaction is not exposed simply
+            // For now, let's use a transaction block via SurrealQL
+            if (tracks.isEmpty()) return@withContext Result.success(Unit)
 
-        val queryBuilder = StringBuilder()
-        queryBuilder.append("BEGIN TRANSACTION;\n")
-        tracks.forEach { track ->
-            val escapedId = track.id.escapeSurreal()
-            queryBuilder.append("""
-                UPDATE track:`$escapedId` CONTENT {
-                    id: '$escapedId',
-                    title: '${track.title.escapeSurreal()}',
-                    artist: '${(track.artist ?: "").escapeSurreal()}',
-                    album: '${(track.album ?: "").escapeSurreal()}',
-                    duration: ${track.duration},
-                    filePath: '${track.filePath.escapeSurreal()}',
-                    fileSize: ${track.fileSize},
-                    bitrate: ${track.bitrate},
-                    format: '${track.format.escapeSurreal()}',
-                    dateAdded: ${track.dateAdded},
-                    indexedAt: time::now()
-                };
-            """.trimIndent()).append("\n")
+            val queryBuilder = StringBuilder()
+            queryBuilder.append("BEGIN TRANSACTION;\n")
+            tracks.forEach { track ->
+                queryBuilder.append("UPSERT track:${track.id} CONTENT \$track_${track.id.replace("-", "_")};\n")
+            }
+            queryBuilder.append("COMMIT TRANSACTION;")
+
+            val params = tracks.associate { "track_${it.id.replace("-", "_")}" to it }
+            driver.query(queryBuilder.toString(), params, Any::class.java)
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        queryBuilder.append("COMMIT TRANSACTION;")
-
-        return runQuery(queryBuilder.toString())
     }
 
     /**
      * Index a playlist and establish dynamic graph relationships with tracks.
-     * Uses SurrealDB's RELATE statement: RELATE playlist:<id> -> contains -> track:<trackId>
      */
-    suspend fun indexPlaylist(playlist: PlaylistEntity, trackIds: List<String>): Result<String> {
-        val escapedPlaylistId = playlist.id.escapeSurreal()
-        val queryBuilder = StringBuilder()
+    suspend fun indexPlaylist(playlist: PlaylistEntity, trackIds: List<String>): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            driver.upsert("playlist:${playlist.id}", playlist)
 
-        // 1. Create or update the playlist node
-        queryBuilder.append("""
-            UPDATE playlist:`$escapedPlaylistId` CONTENT {
-                id: '$escapedPlaylistId',
-                name: '${playlist.name.escapeSurreal()}',
-                description: '${(playlist.description ?: "").escapeSurreal()}',
-                isSmart: ${playlist.isSmart},
-                dateCreated: ${playlist.dateCreated},
-                indexedAt: time::now()
-            };
-        """.trimIndent()).append("\n")
-
-        // 2. Clear old relationships for this playlist
-        queryBuilder.append("DELETE contains WHERE out = playlist:`$escapedPlaylistId`;\n")
-
-        // 3. Establish relational links between playlist and its tracks
-        trackIds.forEach { trackId ->
-            val escapedTrackId = trackId.escapeSurreal()
-            queryBuilder.append("RELATE playlist:`$escapedPlaylistId` -> contains -> track:`$escapedTrackId` SET timestamp = time::now();\n")
+            // Relational links
+            val query = """
+                DELETE contains WHERE out = playlist:${playlist.id};
+                FOR ${'$'}trackId IN ${'$'}trackIds {
+                    RELATE playlist:${playlist.id} -> contains -> track:${'$'}trackId SET timestamp = time::now();
+                };
+            """.trimIndent()
+            
+            driver.query(query, mapOf("trackIds" to trackIds), Any::class.java)
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-
-        return runQuery(queryBuilder.toString())
-    }
-
-    /**
-     * Utility string escape helper
-     */
-    private fun String.escapeSurreal(): String {
-        return this.replace("\\", "\\\\")
-            .replace("'", "\\'")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
     }
 }
