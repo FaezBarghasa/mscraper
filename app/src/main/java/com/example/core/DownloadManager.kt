@@ -15,17 +15,16 @@ import java.util.UUID
 object NativeLibLoader {
     init {
         try {
-            System.loadLibrary("mm_dlp_core")
-        } catch (e: UnsatisfiedLinkError) {
+            uniffi.mmdlp.uniffiEnsureInitialized()
+        } catch (e: Exception) {
             e.printStackTrace()
-            throw e
         }
     }
 }
 
 object MmDlpEngine {
     init { NativeLibLoader }
-    private val lib = com.example.core.MmDlp.INSTANCE
+    private val engine = uniffi.mmdlp.MmDlpEngine()
 
     data class MediaInfo(
         val id: String,
@@ -46,20 +45,53 @@ object MmDlpEngine {
         val filesize: ULong?
     )
 
-    fun extractMetadata(url: String): MediaInfo = lib.extract_metadata(url)
+    fun extractMetadata(url: String): MediaInfo {
+        val meta = engine.extractMetadata(url)
+        return MediaInfo(
+            id = meta.id,
+            title = meta.title,
+            description = meta.description,
+            uploader = meta.uploader,
+            duration = meta.duration,
+            formats = meta.formats.map { f ->
+                MediaFormat(
+                    format_id = f.formatId,
+                    url = f.url,
+                    ext = f.ext,
+                    width = f.width,
+                    height = f.height,
+                    vcodec = f.vcodec,
+                    acodec = f.acodec,
+                    filesize = f.filesize
+                )
+            }
+        )
+    }
+
+    interface DownloadCallback {
+        fun onProgress(progress: uniffi.mmdlp.FfmpegProgress)
+        fun onComplete()
+        fun onError(error: uniffi.mmdlp.EngineException)
+    }
 
     fun downloadAndMux(
         videoUrl: String,
         audioUrl: String,
         outputPath: String,
-        callback: com.example.core.DownloadProgressCallback
+        callback: DownloadCallback
     ) {
-        val jnaCb = object : com.example.core.DownloadProgressCallback {
-            override fun on_progress(progress: com.example.core.FfmpegProgress) = callback.on_progress(progress)
-            override fun on_complete() = callback.on_complete()
-            override fun on_error(error: com.example.core.EngineError) = callback.on_error(error)
+        val uniffiCallback = object : uniffi.mmdlp.DownloadProgressCallback {
+            override fun onProgress(progress: uniffi.mmdlp.FfmpegProgress) {
+                callback.onProgress(progress)
+            }
+            override fun onComplete() {
+                callback.onComplete()
+            }
+            override fun onError(error: uniffi.mmdlp.EngineException) {
+                callback.onError(error)
+            }
         }
-        lib.download_and_mux(videoUrl, audioUrl, outputPath, jnaCb)
+        engine.downloadAndMux(videoUrl, audioUrl, outputPath, uniffiCallback)
     }
 }
 
@@ -102,8 +134,8 @@ class DownloadManager(
                     videoUrl = url,
                     audioUrl = url,
                     outputPath = outputPath,
-                    callback = object : com.example.core.DownloadProgressCallback {
-                        override fun on_progress(progress: com.example.core.FfmpegProgress) {
+                    callback = object : MmDlpEngine.DownloadCallback {
+                        override fun onProgress(progress: uniffi.mmdlp.FfmpegProgress) {
                             _jobs.update { list ->
                                 list.map { j ->
                                     if (j.id == jobId) {
@@ -114,14 +146,14 @@ class DownloadManager(
                             }
                         }
 
-                        override fun on_complete() {
+                        override fun onComplete() {
                             insertTrackIntoDb(jobId, newJob, targetBitrate)
                             _jobs.update { list ->
                                 list.map { if (it.id == jobId) it.copy(status = DownloadStatus.COMPLETED, progress = 1f, downloadSpeed = "DONE") else it }
                             }
                         }
 
-                        override fun on_error(error: com.example.core.EngineError) {
+                        override fun onError(error: uniffi.mmdlp.EngineException) {
                             _jobs.update { list ->
                                 list.map { if (it.id == jobId) it.copy(status = DownloadStatus.ERROR, error = error.toString()) else it }
                             }

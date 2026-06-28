@@ -34,6 +34,9 @@ import com.example.ui.components.AudioVisualizer
 import com.example.ui.components.LyricsDisplay
 import com.example.ui.theme.*
 import com.example.viewmodel.MusicViewModel
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.minDimension
 
 @Composable
 fun NowPlayingScreen(navController: NavController, viewModel: MusicViewModel) {
@@ -490,7 +493,7 @@ fun WaveformDisplay(progress: Float, accentColor: Color) {
                     .clip(RoundedCornerShape(2.dp))
                     .background(color.copy(alpha = alpha))
                     .then(
-                        if (isPlayed) Modifier.shadow(2.dp, RoundedCornerShape(2.dp), accentColor) else Modifier
+                        if (isPlayed) Modifier.shadow(2.dp, RoundedCornerShape(2.dp), ambientColor = accentColor, spotColor = accentColor) else Modifier
                     )
             )
         }

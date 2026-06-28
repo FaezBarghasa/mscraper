@@ -8,6 +8,4 @@
     <!-- Include Application Settings -->
     <include domain="sharedpref" path="crysta_settings_v1.xml" />
 
-    <!-- Exclude Cache -->
-    <exclude domain="cache" path="." />
 </full-backup-content>

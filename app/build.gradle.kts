@@ -27,9 +27,9 @@ android {
     create("release") {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
       storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
+      storePassword = System.getenv("STORE_PASSWORD") ?: "password"
       keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      keyPassword = System.getenv("KEY_PASSWORD") ?: "password"
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -47,7 +47,6 @@ android {
       signingConfig = signingConfigs.getByName("release")
     }
     debug {
-      signingConfig = signingConfigs.getByName("debugConfig")
     }
   }
   compileOptions {
@@ -77,6 +76,13 @@ configurations.all {
     cacheDynamicVersionsFor(4, "hours")
     cacheChangingModulesFor(10, "minutes")
   }
+  // Exclude KMP split artifacts that are metadata-only (no .jar) to prevent
+  // AGP 9.x transform failures during mergeNativeLibs / processClasspath.
+  exclude(group = "androidx.lifecycle", module = "lifecycle-common-java8")
+  exclude(group = "androidx.datastore", module = "datastore-preferences-external-protobuf")
+  exclude(group = "androidx.datastore", module = "datastore-core-okio-jvm")
+  exclude(group = "androidx.datastore", module = "datastore-preferences-proto")
+  exclude(group = "androidx.collection", module = "collection-jvm")
 }
 
 
