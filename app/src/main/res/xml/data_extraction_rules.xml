@@ -1,19 +1,21 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
--->
-<data-extraction-rules>
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules xmlns:android="http://schemas.android.com/apk/res/android">
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <!-- Include User Library Database -->
+        <include domain="database" path="cyber_music_database" />
+        <include domain="database" path="cyber_music_database-shm" />
+        <include domain="database" path="cyber_music_database-wal" />
+
+        <!-- Include Application Settings -->
+        <include domain="sharedpref" path="crysta_settings_v1.xml" />
+
+        <!-- Exclude Cache -->
+        <exclude domain="cache" path="." />
     </cloud-backup>
-    <!--
+
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <!-- Transfer everything except cache for local device moves -->
+        <include domain="root" path="." />
+        <exclude domain="cache" path="." />
     </device-transfer>
-    -->
 </data-extraction-rules>

@@ -72,9 +72,32 @@ fun MiniPlayer(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 8.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(HoloBg)
-                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+                    .shadow(
+                        elevation = 8.dp,
+                        shape = RoundedCornerShape(20.dp),
+                        ambientColor = accentColor.copy(alpha = 0.5f),
+                        spotColor = accentColor
+                    )
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.12f),
+                                Color.White.copy(alpha = 0.05f)
+                            )
+                        )
+                    )
+                    .border(
+                        width = 1.dp,
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.3f),
+                                Color.Transparent,
+                                accentColor.copy(alpha = 0.4f)
+                            )
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
                     .clickable { onNavigateToNowPlaying() }
             ) {
                 // Animated Progress Bar
@@ -277,25 +300,26 @@ fun VerticalVolumeSlider(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF0D0D0D)),
-        shape = RoundedCornerShape(12.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, accentColor.copy(alpha = 0.8f)),
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, accentColor.copy(alpha = 0.5f)),
         modifier = modifier
-            .width(44.dp)
-            .height(150.dp)
-            .shadow(8.dp, RoundedCornerShape(12.dp), ambientColor = accentColor, spotColor = accentColor)
+            .width(50.dp)
+            .height(180.dp)
+            .shadow(12.dp, RoundedCornerShape(16.dp), ambientColor = accentColor, spotColor = accentColor)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(vertical = 12.dp)
+                .padding(vertical = 16.dp)
         ) {
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .width(12.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color.White.copy(alpha = 0.1f))
+                    .width(16.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .border(0.5.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
                     .pointerInput(Unit) {
                         detectTapGestures { offset ->
                             val height = size.height
@@ -318,46 +342,32 @@ fun VerticalVolumeSlider(
                     val activeHeight = h * volume
                     val yStart = h - activeHeight
 
-                    // Draw inactive track background
+                    // Draw outer glow for active track
                     drawRoundRect(
-                        color = Color.White.copy(alpha = 0.15f),
-                        topLeft = Offset(0f, 0f),
-                        size = Size(w, h),
+                        color = accentColor.copy(alpha = 0.2f),
+                        topLeft = Offset(-2f, yStart - 2f),
+                        size = Size(w + 4f, activeHeight + 4f),
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(w / 2, w / 2)
                     )
 
-                    // Draw outer glow for active track (neon glow effect)
+                    // Draw active track with gradient
                     drawRoundRect(
-                        color = accentColor.copy(alpha = 0.3f),
-                        topLeft = Offset(-4f, yStart - 4f),
-                        size = Size(w + 8f, activeHeight + 8f),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius((w + 8f) / 2, (w + 8f) / 2)
-                    )
-
-                    // Draw inner active track
-                    drawRoundRect(
-                        color = accentColor,
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.White.copy(alpha = 0.8f), accentColor)
+                        ),
                         topLeft = Offset(0f, yStart),
                         size = Size(w, activeHeight),
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(w / 2, w / 2)
                     )
-
-                    // Draw a bright white core line for the glowing neon tube effect
-                    drawRoundRect(
-                        color = Color.White.copy(alpha = 0.7f),
-                        topLeft = Offset(w / 3f, yStart + 2f),
-                        size = Size(w / 3f, activeHeight - 4f),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(w / 6f, w / 6f)
-                    )
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "${(volume * 100).toInt()}%",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 10.sp
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 11.sp
             )
         }
     }

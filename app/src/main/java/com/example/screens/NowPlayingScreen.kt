@@ -242,16 +242,16 @@ fun RotatingRecord(isPlaying: Boolean, imageUrl: String, accentColor: Color, sec
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(if (isPlaying) 10000 else 0, easing = LinearEasing),
+            animation = tween(if (isPlaying) 12000 else 0, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         )
     )
 
     val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.95f,
-        targetValue = 1.05f,
+        initialValue = 0.98f,
+        targetValue = 1.02f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
+            animation = tween(2500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         )
     )
@@ -259,57 +259,77 @@ fun RotatingRecord(isPlaying: Boolean, imageUrl: String, accentColor: Color, sec
 
     Box(
         modifier = Modifier
-            .size(280.dp)
-            .padding(12.dp),
+            .size(300.dp)
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Outer pulsing neon accent glow ring
+        // Neon Glow Halo
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    scaleX = activeScale
-                    scaleY = activeScale
-                    alpha = if (isPlaying) 0.6f else 0.2f
+                    scaleX = activeScale * 1.1f
+                    scaleY = activeScale * 1.1f
+                    alpha = if (isPlaying) 0.3f else 0.1f
                 }
-                .border(2.dp, accentColor, CircleShape)
+                .background(Brush.radialGradient(listOf(accentColor.copy(alpha = 0.4f), Color.Transparent)), CircleShape)
         )
-        
-        // Inner pulsing secondary glow ring (out-of-sync breathing)
+
+        // Outer pulsing neon accent glow ring
         Box(
             modifier = Modifier
                 .size(260.dp)
                 .graphicsLayer {
-                    scaleX = if (isPlaying) 2.0f - activeScale else 1.0f
-                    scaleY = if (isPlaying) 2.0f - activeScale else 1.0f
-                    alpha = if (isPlaying) 0.4f else 0.1f
+                    scaleX = activeScale
+                    scaleY = activeScale
+                    alpha = if (isPlaying) 0.8f else 0.3f
                 }
-                .border(1.dp, secColor, CircleShape)
+                .border(2.dp, Brush.sweepGradient(listOf(accentColor, secColor, accentColor)), CircleShape)
         )
         
         Box(
             modifier = Modifier
-                .size(240.dp)
+                .size(230.dp)
                 .clip(CircleShape)
-                .background(HoloBg)
+                .background(DeepVoid)
                 .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
                 .rotate(if (isPlaying) rotation else 0f),
             contentAlignment = Alignment.Center
         ) {
             androidx.compose.animation.Crossfade(
                 targetState = imageUrl,
-                animationSpec = tween(1000, easing = FastOutSlowInEasing)
+                animationSpec = tween(1200, easing = FastOutSlowInEasing)
             ) { targetUrl ->
                 AsyncImage(
                     model = targetUrl,
                     contentDescription = "Album Art",
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .alpha(0.9f)
                 )
             }
+            // Vinyl texture lines
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                for (i in 1..5) {
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.05f),
+                        radius = (size.minDimension / 2) * (i / 6f),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f)
+                    )
+                }
+            }
             // Center hole
-            Box(modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.5f)))
-            Box(modifier = Modifier.size(16.dp).clip(CircleShape).background(Color.Black))
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .background(DeepVoid)
+                    .border(2.dp, Color.White.copy(alpha = 0.1f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(modifier = Modifier.size(12.dp).clip(CircleShape).background(accentColor))
+            }
         }
     }
 }
@@ -388,7 +408,6 @@ fun ActionButtons(track: Track, favTracks: List<com.example.model.FavoriteTrack>
 
 @Composable
 fun ProgressBar(progress: Float, durationStr: String, accentColor: Color, secColor: Color) {
-    // Parse durationStr in form e.g. "4:03"
     val totalSecs = try {
         val parts = durationStr.split(":")
         val mins = parts[0].toInt()
@@ -398,7 +417,10 @@ fun ProgressBar(progress: Float, durationStr: String, accentColor: Color, secCol
         243
     }
 
-    val animatedProgress by animateFloatAsState(targetValue = progress)
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(1000, easing = LinearOutSlowInEasing)
+    )
 
     val elapsedSecs = (totalSecs * animatedProgress).toInt()
     val elapsedStr = String.format("%d:%02d", elapsedSecs / 60, elapsedSecs % 60)
@@ -407,49 +429,69 @@ fun ProgressBar(progress: Float, durationStr: String, accentColor: Color, secCol
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(Color.White.copy(alpha = 0.1f))
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color.White.copy(alpha = 0.05f))
+                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(animatedProgress)
-                    .height(6.dp)
-                    .background(Brush.horizontalGradient(listOf(accentColor, secColor)))
+                    .fillMaxHeight()
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(secColor.copy(alpha = 0.7f), accentColor, Color.White)
+                        )
+                    )
+                    .shadow(4.dp, RoundedCornerShape(4.dp), ambientColor = accentColor, spotColor = accentColor)
             )
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         WaveformDisplay(progress = animatedProgress, accentColor = accentColor)
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(elapsedStr, style = MaterialTheme.typography.labelSmall, color = TextGray)
-            Text(durationStr, style = MaterialTheme.typography.labelSmall, color = TextGray)
+            Text(
+                elapsedStr, 
+                style = MaterialTheme.typography.labelSmall, 
+                color = accentColor,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                durationStr, 
+                style = MaterialTheme.typography.labelSmall, 
+                color = TextGray
+            )
         }
     }
 }
 
 @Composable
 fun WaveformDisplay(progress: Float, accentColor: Color) {
-    // Generate a static pseudo-random waveform pattern for visualization
-    val waveformData = remember { List(60) { Random.nextFloat() * 0.9f + 0.1f } }
+    val waveformData = remember { List(60) { Random.nextFloat() * 0.8f + 0.2f } }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(24.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .height(32.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         waveformData.forEachIndexed { index, amp ->
             val isPlayed = (index.toFloat() / waveformData.size) <= progress
+            val alpha = if (isPlayed) 1f else 0.2f
+            val color = if (isPlayed) accentColor else Color.White
+            
             Box(
                 modifier = Modifier
-                    .width(3.dp)
+                    .weight(1f)
                     .fillMaxHeight(amp)
-                    .clip(RoundedCornerShape(1.5.dp))
-                    .background(if (isPlayed) accentColor else Color.White.copy(alpha = 0.2f))
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(color.copy(alpha = alpha))
+                    .then(
+                        if (isPlayed) Modifier.shadow(2.dp, RoundedCornerShape(2.dp), accentColor) else Modifier
+                    )
             )
         }
     }
@@ -488,6 +530,7 @@ fun PlaybackControls(
         Box(
             modifier = Modifier
                 .size(72.dp)
+                .shadow(12.dp, CircleShape, ambientColor = accentColor, spotColor = accentColor)
                 .clip(CircleShape)
                 .background(accentColor)
                 .clickable { onTogglePlay() },
