@@ -69,11 +69,18 @@ fun SearchScreen(
         viewModel.updateSearchQuery(term)
     }
 
+    val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(DeepVoid)
-            .verticalScroll(rememberScrollState())
+            .then(
+                if (searchQuery.isBlank()) {
+                    Modifier.verticalScroll(scrollState)
+                } else {
+                    Modifier
+                }
+            )
     ) {
         StatusBar(accentColor, onOpenDrawer)
         SearchBar(
@@ -105,7 +112,7 @@ fun SearchScreen(
                     onFavoriteClick = { track -> viewModel.toggleFavorite(track) },
                     onEditClick = { /* No-op */ },
                     onAddToPlaylist = { trackToAddToPlaylist = it },
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.weight(1f).padding(horizontal = 16.dp)
                 )
             } else {
                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {

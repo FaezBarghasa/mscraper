@@ -82,7 +82,6 @@ configurations.all {
   exclude(group = "androidx.datastore", module = "datastore-preferences-external-protobuf")
   exclude(group = "androidx.datastore", module = "datastore-core-okio-jvm")
   exclude(group = "androidx.datastore", module = "datastore-preferences-proto")
-  exclude(group = "androidx.collection", module = "collection-jvm")
 }
 
 

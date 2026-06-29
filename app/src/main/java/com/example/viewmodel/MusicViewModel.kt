@@ -340,10 +340,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleStreamDownloadMode() {
         _isDownloadToggleActive.update { !it }
+        saveRoutingSettings()
     }
 
     fun toggleQuicStream() {
         _quicEnabled.update { !it }
+        savePlaybackSettings()
     }
 
     fun setStreamingSourcePriority(priority: List<String>) {
@@ -360,10 +362,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleAutoDownloadOnWifi() {
         _autoDownloadOnWifi.update { !it }
+        saveDownloadSettings()
     }
 
     fun setDownloadMinQualityBitrate(bitrate: Int) {
         _downloadMinQualityBitrate.value = bitrate
+        saveDownloadSettings()
     }
 
     fun applySettingsFromSync(
@@ -431,6 +435,18 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         _equalizerPreset.value = pb.equalizerPreset
         _spatialAudio.value = pb.spatialAudio
         _hapticIntensity.value = pb.hapticIntensity
+        _quicEnabled.value = pb.quicEnabled
+
+        val dl = settingsManager.loadDownloadSettings()
+        _autoDownloadOnWifi.value = dl.autoDownloadOnWifi
+        _downloadMinQualityBitrate.value = dl.minQualityBitrate
+
+        val vis = settingsManager.loadVisualSettings()
+        _cyberAccentColor.value = vis.cyberAccentColor
+        _visualizerStyle.value = vis.visualizerStyle
+
+        val rt = settingsManager.loadRoutingSettings()
+        _isDownloadToggleActive.value = rt.isDownloadToggleActive
 
         // Restore volume and track from session
         val savedVolume = sessionPrefs.getFloat("volume", 0.8f)
@@ -761,17 +777,43 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             crossfadeDuration = _crossfadeDuration.value,
             equalizerPreset = _equalizerPreset.value,
             spatialAudio = _spatialAudio.value,
-            hapticIntensity = _hapticIntensity.value
+            hapticIntensity = _hapticIntensity.value,
+            quicEnabled = _quicEnabled.value
         )
         settingsManager.savePlaybackSettings(pb)
     }
 
+    private fun saveDownloadSettings() {
+        val dl = com.example.core.DownloadSettings(
+            autoDownloadOnWifi = _autoDownloadOnWifi.value,
+            minQualityBitrate = _downloadMinQualityBitrate.value
+        )
+        settingsManager.saveDownloadSettings(dl)
+    }
+
+    private fun saveVisualSettings() {
+        val vis = com.example.core.VisualSettings(
+            cyberAccentColor = _cyberAccentColor.value,
+            visualizerStyle = _visualizerStyle.value
+        )
+        settingsManager.saveVisualSettings(vis)
+    }
+
+    private fun saveRoutingSettings() {
+        val rt = com.example.core.RoutingSettings(
+            isDownloadToggleActive = _isDownloadToggleActive.value
+        )
+        settingsManager.saveRoutingSettings(rt)
+    }
+
     fun setCyberAccentColor(color: String) {
         _cyberAccentColor.value = color
+        saveVisualSettings()
     }
 
     fun setVisualizerStyle(style: String) {
         _visualizerStyle.value = style
+        saveVisualSettings()
     }
 
     fun setVolume(vol: Float) {

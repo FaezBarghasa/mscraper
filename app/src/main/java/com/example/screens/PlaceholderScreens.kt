@@ -507,38 +507,38 @@ fun SettingsScreen(navController: NavController, viewModel: MusicViewModel = vie
         modifier = Modifier
             .fillMaxSize()
             .background(DeepVoid)
-            .padding(16.dp)
+            .padding(12.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text("SYSTEM SETTINGS", style = MaterialTheme.typography.headlineMedium, color = accentColor, fontWeight = FontWeight.Bold)
+        Text("SYSTEM SETTINGS", style = MaterialTheme.typography.titleLarge, color = accentColor, fontWeight = FontWeight.Bold)
         Text("Configure visual aesthetics, audio decoders & haptic channels", style = MaterialTheme.typography.labelSmall, color = TextGray)
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         
         // 0. SYSTEM CORE OPERATIONS LINK
         GlassCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(vertical = 4.dp)
                 .clickable { navController.navigate("core_deck") }
         ) {
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
                             .background(accentColor.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Filled.SettingsSuggest, contentDescription = null, tint = accentColor)
+                        Icon(Icons.Filled.SettingsSuggest, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text("SYSTEM CORE DECK", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("SYSTEM CORE DECK", style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.Bold)
                         Text("Downloader, Scanner, Backups & Sync Hub", style = MaterialTheme.typography.labelSmall, color = accentColor)
                     }
                 }
@@ -553,12 +553,12 @@ fun SettingsScreen(navController: NavController, viewModel: MusicViewModel = vie
         val autoDownloadOnWifi by viewModel.autoDownloadOnWifi.collectAsState()
         val minDownloadBitrate by viewModel.downloadMinQualityBitrate.collectAsState()
 
-        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
+        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     "CONTEXT-AWARE SOURCE ROUTING",
                     color = Color.White,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
@@ -566,33 +566,33 @@ fun SettingsScreen(navController: NavController, viewModel: MusicViewModel = vie
                     color = TextGray,
                     style = MaterialTheme.typography.labelSmall
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // STREAM vs DOWNLOAD MODE Toggle
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .background(HoloBg)
-                        .padding(4.dp),
+                        .padding(2.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    listOf(false to "🌐 STREAMING", true to "📥 DOWNLOAD").forEach { (isDownloadMode, label) ->
+                    listOf(false to "🌐 STREAM", true to "📥 ARCHIVE").forEach { (isDownloadMode, label) ->
                         val isSelected = isDownloadToggleActive == isDownloadMode
                         val buttonColor = if (isSelected) accentColor else Color.Transparent
                         val textColor = if (isSelected) DeepVoid else TextGray
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(6.dp))
                                 .background(buttonColor)
                                 .clickable { viewModel.toggleStreamDownloadMode() }
-                                .padding(vertical = 10.dp),
+                                .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = label,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = textColor
                             )
@@ -600,7 +600,7 @@ fun SettingsScreen(navController: NavController, viewModel: MusicViewModel = vie
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Priority Displays
                 Text(
@@ -693,11 +693,11 @@ fun SettingsScreen(navController: NavController, viewModel: MusicViewModel = vie
         }
         
         // 1. Theme Color Selection (Aesthetic Sync)
-        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("NEON ACCENT SYNC", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text("NEON ACCENT SYNC", color = Color.White, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Text("Select highlight frequency for the entire holographic system", color = TextGray, style = MaterialTheme.typography.labelSmall)
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -713,17 +713,17 @@ fun SettingsScreen(navController: NavController, viewModel: MusicViewModel = vie
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(44.dp)
+                                    .size(36.dp)
                                     .clip(CircleShape)
                                     .background(colorValues[i])
-                                    .border(if (isSelected) 3.dp else 0.dp, Color.White, CircleShape),
+                                    .border(if (isSelected) 2.dp else 0.dp, Color.White, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (isSelected) {
-                                    Icon(Icons.Filled.Check, contentDescription = null, tint = DeepVoid, modifier = Modifier.size(24.dp))
+                                    Icon(Icons.Filled.Check, contentDescription = null, tint = DeepVoid, modifier = Modifier.size(20.dp))
                                 }
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 name.replace(" ", "\n"), 
                                 style = MaterialTheme.typography.labelSmall, 
@@ -737,10 +737,10 @@ fun SettingsScreen(navController: NavController, viewModel: MusicViewModel = vie
         }
 
         // 2. Audio Engine Settings
-        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("AUDIO DSP ENGINE", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(12.dp))
+        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text("AUDIO DSP ENGINE", color = Color.White, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
                 
                 // Crossfade Toggle
                 Row(
