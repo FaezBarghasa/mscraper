@@ -37,6 +37,31 @@ data class PipedAudioStream(
     val bitrate: Long
 )
 
+data class PipedPlaylistResponse(
+    val name: String,
+    val thumbnailUrl: String,
+    val description: String?,
+    val uploader: String,
+    val uploaderUrl: String?,
+    val videos: Int,
+    val relatedItems: List<PipedSearchItem>
+)
+
+data class PipedChannelResponse(
+    val id: String,
+    val name: String,
+    val avatarUrl: String?,
+    val bannerUrl: String?,
+    val subscriberCount: Long,
+    val description: String?,
+    val relatedPlaylists: List<PipedRelatedPlaylist>
+)
+
+data class PipedRelatedPlaylist(
+    val title: String,
+    val playlistId: String
+)
+
 interface PipedApiService {
     @GET("search")
     suspend fun search(
@@ -48,4 +73,25 @@ interface PipedApiService {
     suspend fun getStreams(
         @Path("videoId") videoId: String
     ): PipedStreamResponse
+
+    @GET("suggestions")
+    suspend fun getSuggestions(
+        @Query("query") query: String
+    ): List<String>
+
+    @GET("playlists/{playlistId}")
+    suspend fun getPlaylist(
+        @Path("playlistId") playlistId: String
+    ): PipedPlaylistResponse
+
+    @GET("channel/{channelId}")
+    suspend fun getChannel(
+        @Path("channelId") channelId: String
+    ): PipedChannelResponse
+
+    @GET("trending")
+    suspend fun getTrending(
+        @Query("region") region: String = "US"
+    ): List<PipedSearchItem>
 }
+
