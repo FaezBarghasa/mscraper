@@ -587,13 +587,20 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     delay(stepDuration)
                 }
                 
+                val actualUri = if (track.filePath.startsWith("http") || java.io.File(track.filePath).exists()) {
+                    track.filePath
+                } else {
+                    // Try resolving the stream via MediaApiManager using the track ID
+                    com.example.network.MediaApiManager.getStreamUrl(track.id) ?: track.filePath
+                }
+
                 _currentTrack.value = track
                 val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
                     .setTitle(track.title)
                     .setArtist(track.artist)
                     .build()
                 val mediaItem = androidx.media3.common.MediaItem.Builder()
-                    .setUri(track.filePath)
+                    .setUri(actualUri)
                     .setMediaId(track.id)
                     .setMediaMetadata(mediaMetadata)
                     .build()
@@ -609,21 +616,28 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 player.volume = _volume.value
             }
         } else {
-            _currentTrack.value = track
-            _isPlaying.value = true
-            val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
-                .setTitle(track.title)
-                .setArtist(track.artist)
-                .build()
-            val mediaItem = androidx.media3.common.MediaItem.Builder()
-                .setUri(track.filePath)
-                .setMediaId(track.id)
-                .setMediaMetadata(mediaMetadata)
-                .build()
-            player.setMediaItem(mediaItem)
-            player.prepare()
-            player.play()
-            player.volume = _volume.value
+            viewModelScope.launch {
+                val actualUri = if (track.filePath.startsWith("http") || java.io.File(track.filePath).exists()) {
+                    track.filePath
+                } else {
+                    com.example.network.MediaApiManager.getStreamUrl(track.id) ?: track.filePath
+                }
+                _currentTrack.value = track
+                _isPlaying.value = true
+                val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
+                    .setTitle(track.title)
+                    .setArtist(track.artist)
+                    .build()
+                val mediaItem = androidx.media3.common.MediaItem.Builder()
+                    .setUri(actualUri)
+                    .setMediaId(track.id)
+                    .setMediaMetadata(mediaMetadata)
+                    .build()
+                player.setMediaItem(mediaItem)
+                player.prepare()
+                player.play()
+                player.volume = _volume.value
+            }
         }
     }
     
