@@ -128,7 +128,7 @@ class DownloadManager(
                 format = targetFormat
             )
             _jobs.update { it + newJob }
-            val outputPath = "/storage/emulated/0/Music/Crysta/${newJob.title}.${targetFormat.lowercase()}"
+            val outputPath = "/storage/emulated/0/Music/M-scraper/${newJob.title}.${targetFormat.lowercase()}"
             try {
                 MmDlpEngine.downloadAndMux(
                     videoUrl = url,
@@ -184,7 +184,7 @@ class DownloadManager(
             bitrate = parsedBitrate,
             sampleRate = 44100,
             format = job.format,
-            filePath = "/storage/emulated/0/Music/Crysta/${job.title}.${job.format.lowercase()}",
+            filePath = "/storage/emulated/0/Music/M-scraper/${job.title}.${job.format.lowercase()}",
             fileSize = 10485760L,
             artworkPath = job.imageUrl,
             dateAdded = System.currentTimeMillis()

@@ -37,6 +37,15 @@ import com.example.viewmodel.MusicViewModel
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.minDimension
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.platform.LocalContext
+import androidx.palette.graphics.Palette
+import coil.ImageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun NowPlayingScreen(navController: NavController, viewModel: MusicViewModel) {
@@ -50,7 +59,10 @@ fun NowPlayingScreen(navController: NavController, viewModel: MusicViewModel) {
     val isShuffleEnabled by viewModel.shuffleEnabled.collectAsState()
     val repeatMode by viewModel.repeatMode.collectAsState()
     
-    var offsetX by remember { mutableFloatStateOf(0f) }
+    val sleepMinutes by viewModel.sleepTimerMinutes.collectAsState()
+    val sleepSecondsLeft by viewModel.sleepTimerSecondsLeft.collectAsState()
+    var showSleepTimerDialog by remember { mutableStateOf(false) }
+
     val haptic = LocalHapticFeedback.current
 
     val track = currentTrack ?: Track(
@@ -70,26 +82,46 @@ fun NowPlayingScreen(navController: NavController, viewModel: MusicViewModel) {
         }
     }
 
+    val context = LocalContext.current
+    val accentColorStr by viewModel.cyberAccentColor.collectAsState()
+    
+    LaunchedEffect(track.imageUrl, accentColorStr) {
+        if (accentColorStr == "DYNAMIC" && track.imageUrl.isNotBlank()) {
+            try {
+                val loader = ImageLoader(context)
+                val request = ImageRequest.Builder(context)
+                    .data(track.imageUrl)
+                    .allowHardware(false)
+                    .build()
+                val result = (loader.execute(request) as? SuccessResult)?.drawable
+                val bitmap = (result as? android.graphics.drawable.BitmapDrawable)?.bitmap
+                if (bitmap != null) {
+                    withContext(Dispatchers.Default) {
+                        val palette = Palette.from(bitmap).generate()
+                        val primary = palette.getVibrantColor(0xFF00E6FF.toInt())
+                        val secondary = palette.getMutedColor(0xFF7B00FF.toInt())
+                        viewModel.updateThemeOverrides(Color(primary), Color(secondary))
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        } else if (accentColorStr != "DYNAMIC") {
+            viewModel.updateThemeOverrides(null, null)
+        }
+    }
+
+    if (showSleepTimerDialog) {
+        SleepTimerDialog(
+            onDismiss = { showSleepTimerDialog = false },
+            currentMinutes = sleepMinutes,
+            onSelectMinutes = { viewModel.setSleepTimer(it) }
+        )
+    }
+
     Box(modifier = Modifier
         .fillMaxSize()
         .background(DeepVoid)
-        .pointerInput(Unit) {
-            detectHorizontalDragGestures(
-                onDragEnd = {
-                    if (offsetX > 150f) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.previousTrack()
-                    } else if (offsetX < -150f) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.nextTrack()
-                    }
-                    offsetX = 0f
-                },
-                onHorizontalDrag = { change, dragAmount ->
-                    offsetX += dragAmount
-                }
-            )
-        }
     ) {
         // Dynamic background
         AsyncImage(
@@ -119,15 +151,63 @@ fun NowPlayingScreen(navController: NavController, viewModel: MusicViewModel) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val isDownloadToggleActive by viewModel.isDownloadToggleActive.collectAsState()
+            val queue by viewModel.queue.collectAsState()
+            
+            val initialPage = remember(queue, track.id) {
+                val idx = queue.indexOfFirst { it.id == track.id }
+                if (idx != -1) idx else 0
+            }
+
+            val pagerState = rememberPagerState(
+                initialPage = initialPage,
+                pageCount = { if (queue.isEmpty()) 1 else queue.size }
+            )
+
+            // Keep pager in sync with track:
+            LaunchedEffect(track.id) {
+                val targetIdx = queue.indexOfFirst { it.id == track.id }
+                if (targetIdx != -1 && pagerState.currentPage != targetIdx) {
+                    pagerState.animateScrollToPage(targetIdx)
+                }
+            }
+
+            // Sync pager scroll to skip tracks:
+            LaunchedEffect(pagerState.currentPage) {
+                if (queue.isNotEmpty() && pagerState.currentPage in queue.indices) {
+                    val trackToPlay = queue[pagerState.currentPage]
+                    if (trackToPlay.id != track.id) {
+                        viewModel.playTrack(trackToPlay)
+                    }
+                }
+            }
+
             NowPlayingTopBar(
                 navController = navController,
                 track = track,
                 accentColor = accentColor,
                 isDownloadActive = isDownloadToggleActive,
-                onToggleMode = { viewModel.toggleStreamDownloadMode() }
+                onToggleMode = { viewModel.toggleStreamDownloadMode() },
+                sleepMinutes = sleepMinutes,
+                sleepSecondsLeft = sleepSecondsLeft,
+                onSleepTimerClick = { showSleepTimerDialog = true }
             )
             Spacer(modifier = Modifier.weight(1f))
-            RotatingRecord(isPlaying, track.imageUrl, accentColor, secColor)
+            
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+            ) { page ->
+                val trackForPage = if (queue.isEmpty()) track else queue[page]
+                RotatingRecord(
+                    isPlaying = isPlaying && (trackForPage.id == track.id), 
+                    imageUrl = trackForPage.imageUrl, 
+                    accentColor = accentColor, 
+                    secColor = secColor
+                )
+            }
+
             Spacer(modifier = Modifier.weight(1f))
             SongInfo(track, accentColor)
             Spacer(modifier = Modifier.height(16.dp))
@@ -187,7 +267,10 @@ fun NowPlayingTopBar(
     track: Track,
     accentColor: Color,
     isDownloadActive: Boolean,
-    onToggleMode: () -> Unit
+    onToggleMode: () -> Unit,
+    sleepMinutes: Int,
+    sleepSecondsLeft: Int,
+    onSleepTimerClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -225,15 +308,41 @@ fun NowPlayingTopBar(
             }
         }
         
-        IconButton(
-            onClick = { onToggleMode() },
-            modifier = Modifier.background(Color.White.copy(alpha = 0.1f), CircleShape)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = if (isDownloadActive) Icons.Filled.DownloadDone else Icons.Filled.CloudDownload,
-                contentDescription = "Toggle Routing Mode",
-                tint = if (isDownloadActive) Color(0xFFFF5555) else CyberCyan
-            )
+            // Sleep Timer Button
+            IconButton(
+                onClick = onSleepTimerClick,
+                modifier = Modifier.background(Color.White.copy(alpha = 0.1f), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.AccessTime,
+                    contentDescription = "Sleep Timer",
+                    tint = if (sleepMinutes > 0) accentColor else Color.White
+                )
+            }
+            if (sleepSecondsLeft > 0) {
+                val formattedTime = String.format("%02d:%02d", sleepSecondsLeft / 60, sleepSecondsLeft % 60)
+                Text(
+                    text = formattedTime,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accentColor,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            IconButton(
+                onClick = { onToggleMode() },
+                modifier = Modifier.background(Color.White.copy(alpha = 0.1f), CircleShape)
+            ) {
+                Icon(
+                    imageVector = if (isDownloadActive) Icons.Filled.DownloadDone else Icons.Filled.CloudDownload,
+                    contentDescription = "Toggle Routing Mode",
+                    tint = if (isDownloadActive) Color(0xFFFF5555) else CyberCyan
+                )
+            }
         }
     }
 }
@@ -562,4 +671,50 @@ fun PlaybackControls(
             )
         }
     }
+}
+
+@Composable
+fun SleepTimerDialog(
+    onDismiss: () -> Unit,
+    currentMinutes: Int,
+    onSelectMinutes: (Int) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Sleep Timer", color = Color.White) },
+        containerColor = DeepVoid,
+        text = {
+            Column {
+                listOf(0, 15, 30, 45, 60, 90).forEach { mins ->
+                    val label = if (mins == 0) "Turn Off" else "${mins} minutes"
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onSelectMinutes(mins)
+                                onDismiss()
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = (currentMinutes == mins),
+                            onClick = {
+                                onSelectMinutes(mins)
+                                onDismiss()
+                            },
+                            colors = RadioButtonDefaults.colors(selectedColor = Color.White, unselectedColor = TextGray)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(label, color = Color.White)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color.White)
+            }
+        }
+    )
 }

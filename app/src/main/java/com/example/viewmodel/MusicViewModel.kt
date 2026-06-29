@@ -218,7 +218,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private val sessionPrefs = application.getSharedPreferences("crysta_session_v1", android.content.Context.MODE_PRIVATE)
+    private val sessionPrefs = application.getSharedPreferences("m-scraper_session_v1", android.content.Context.MODE_PRIVATE)
 
     private fun saveSession() {
         val editor = sessionPrefs.edit()
@@ -390,32 +390,47 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         _downloadMinQualityBitrate.value = minQualityBitrate
     }
 
-    // Theme support derived values
-    val themePrimary: StateFlow<Color> = _cyberAccentColor.map { color ->
-        when (color) {
-            "NEON TOKYO" -> com.example.ui.theme.TokyoBlue
-            "DATA GLITCH" -> com.example.ui.theme.GlitchGreen
-            "ACID RAIN" -> com.example.ui.theme.AcidRed
-            "CYAN" -> com.example.ui.theme.CyberCyan
-            "MAGENTA" -> com.example.ui.theme.NeonMagenta
-            "GREEN" -> com.example.ui.theme.PrimaryGreen
-            "ORANGE" -> Color(0xFFFF8800)
-            else -> com.example.ui.theme.TokyoBlue
+    private val _themePrimaryOverride = MutableStateFlow<Color?>(null)
+    private val _themeSecondaryOverride = MutableStateFlow<Color?>(null)
+
+    val themePrimary: StateFlow<Color> = combine(_cyberAccentColor, _themePrimaryOverride) { color, override ->
+        if (override != null && color == "DYNAMIC") {
+            override
+        } else {
+            when (color) {
+                "NEON TOKYO" -> com.example.ui.theme.TokyoBlue
+                "DATA GLITCH" -> com.example.ui.theme.GlitchGreen
+                "ACID RAIN" -> com.example.ui.theme.AcidRed
+                "CYAN" -> com.example.ui.theme.CyberCyan
+                "MAGENTA" -> com.example.ui.theme.NeonMagenta
+                "GREEN" -> com.example.ui.theme.PrimaryGreen
+                "ORANGE" -> Color(0xFFFF8800)
+                else -> com.example.ui.theme.TokyoBlue
+            }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.ui.theme.TokyoBlue)
 
-    val themeSecondary: StateFlow<Color> = _cyberAccentColor.map { color ->
-        when (color) {
-            "NEON TOKYO" -> com.example.ui.theme.TokyoPink
-            "DATA GLITCH" -> Color(0xFF00AA22) // Brighter secondary for visibility instead of black
-            "ACID RAIN" -> com.example.ui.theme.AcidPurple
-            "CYAN" -> com.example.ui.theme.NeonMagenta
-            "MAGENTA" -> com.example.ui.theme.CyberCyan
-            "GREEN" -> com.example.ui.theme.CyberCyan
-            "ORANGE" -> com.example.ui.theme.NeonMagenta
-            else -> com.example.ui.theme.TokyoPink
+    val themeSecondary: StateFlow<Color> = combine(_cyberAccentColor, _themeSecondaryOverride) { color, override ->
+        if (override != null && color == "DYNAMIC") {
+            override
+        } else {
+            when (color) {
+                "NEON TOKYO" -> com.example.ui.theme.TokyoPink
+                "DATA GLITCH" -> Color(0xFF00AA22)
+                "ACID RAIN" -> Color(0xFF8800FF)
+                "CYAN" -> Color(0xFF00AAFF)
+                "MAGENTA" -> Color(0xFFFF0055)
+                "GREEN" -> Color(0xFF00FF00)
+                "ORANGE" -> Color(0xFFFFBB00)
+                else -> com.example.ui.theme.TokyoPink
+            }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.ui.theme.TokyoPink)
+
+    fun updateThemeOverrides(primary: Color?, secondary: Color?) {
+        _themePrimaryOverride.value = primary
+        _themeSecondaryOverride.value = secondary
+    }
 
     init {
         // Asynchronously initialize SurrealDB database schema upon application launch to ensure integrity
@@ -556,7 +571,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         currentRecent.removeAll { it.id == track.id }
         currentRecent.add(0, track)
         if (currentRecent.size > 10) {
-            currentRecent.removeLast()
+            currentRecent.removeAt(currentRecent.lastIndex)
         }
         _recentlyPlayed.value = currentRecent
 

@@ -702,11 +702,16 @@ fun SettingsScreen(navController: NavController, viewModel: MusicViewModel = vie
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    val colorsList = listOf("NEON TOKYO", "DATA GLITCH", "ACID RAIN", "CYAN")
-                    val colorValues = listOf(com.example.ui.theme.TokyoBlue, com.example.ui.theme.GlitchGreen, com.example.ui.theme.AcidRed, CyberCyan)
+                    val colorsList = listOf("NEON TOKYO", "DATA GLITCH", "ACID RAIN", "CYAN", "DYNAMIC")
+                    val colorValues = listOf(com.example.ui.theme.TokyoBlue, com.example.ui.theme.GlitchGreen, com.example.ui.theme.AcidRed, CyberCyan, Color.Transparent)
                     
                     colorsList.forEachIndexed { i, name ->
                         val isSelected = accentColorStr == name
+                        val textThemeColor = if (name == "DYNAMIC") {
+                            if (isSelected) Color.White else TextGray
+                        } else {
+                            if (isSelected) colorValues[i] else TextGray
+                        }
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.clickable { viewModel.setCyberAccentColor(name) }
@@ -715,19 +720,25 @@ fun SettingsScreen(navController: NavController, viewModel: MusicViewModel = vie
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(CircleShape)
-                                    .background(colorValues[i])
+                                    .background(
+                                        if (name == "DYNAMIC") {
+                                            Brush.sweepGradient(listOf(Color.Red, Color.Yellow, Color.Green, Color.Blue, Color.Magenta, Color.Red))
+                                        } else {
+                                            Brush.linearGradient(listOf(colorValues[i], colorValues[i]))
+                                        }
+                                    )
                                     .border(if (isSelected) 2.dp else 0.dp, Color.White, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (isSelected) {
-                                    Icon(Icons.Filled.Check, contentDescription = null, tint = DeepVoid, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Filled.Check, contentDescription = null, tint = if (name == "DYNAMIC") Color.White else DeepVoid, modifier = Modifier.size(20.dp))
                                 }
                             }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 name.replace(" ", "\n"), 
                                 style = MaterialTheme.typography.labelSmall, 
-                                color = if (isSelected) colorValues[i] else TextGray,
+                                color = textThemeColor,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                         }

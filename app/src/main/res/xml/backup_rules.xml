@@ -6,6 +6,6 @@
     <include domain="database" path="cyber_music_database-wal" />
 
     <!-- Include Application Settings -->
-    <include domain="sharedpref" path="crysta_settings_v1.xml" />
+    <include domain="sharedpref" path="m-scraper_settings_v1.xml" />
 
 </full-backup-content>

@@ -44,7 +44,7 @@ class BackupSyncService(private val context: Context) {
 
     // SharedPreferences Accessors for SurrealDB Credentials
     fun getSurrealEndpoint(): String = prefs.getString("endpoint", "http://10.0.2.2:8000") ?: "http://10.0.2.2:8000"
-    fun getSurrealNamespace(): String = prefs.getString("namespace", "crysta") ?: "crysta"
+    fun getSurrealNamespace(): String = prefs.getString("namespace", "m-scraper") ?: "m-scraper"
     fun getSurrealDatabase(): String = prefs.getString("database", "music") ?: "music"
     fun getSurrealUsername(): String = prefs.getString("username", "root") ?: "root"
     fun getSurrealPassword(): String = prefs.getString("password", "root") ?: "root"
@@ -63,8 +63,8 @@ class BackupSyncService(private val context: Context) {
     // Local Backup (Task 6.1)
     fun createLocalBackup(): String {
         val timestamp = System.currentTimeMillis()
-        val backupName = "Crysta_Backup_$timestamp.db.json"
-        return "BACKUP CREATED SUCCESSFULLY: $backupName\nLocation: /storage/emulated/0/Crysta/backups/$backupName"
+        val backupName = "M-scraper_Backup_$timestamp.db.json"
+        return "BACKUP CREATED SUCCESSFULLY: $backupName\nLocation: /storage/emulated/0/M-scraper/backups/$backupName"
     }
 
     fun restoreLocalBackup(backupPath: String): Boolean {

@@ -210,9 +210,12 @@ fun CoreDeckScreen(navController: NavController, viewModel: MusicViewModel = vie
 @Composable
 fun DownloaderDeckTab(viewModel: MusicViewModel, accentColor: Color, secColor: Color) {
     val jobs by viewModel.downloadManager.jobs.collectAsState()
-    var inputUrl by remember { mutableStateOf("https://music.apple.com/us/album/midnight-city/457421833?i=457421838") }
+    var inputUrl by remember { mutableStateOf("") }
     var targetFormat by remember { mutableStateOf("MP3") }
     var targetBitrate by remember { mutableStateOf("320kbps") }
+    var sourcePlatform by remember { mutableStateOf("Direct URL") }
+
+    val platforms = listOf("Direct URL", "YouTube Music", "SoundCloud", "Spotify")
 
     val formats = listOf("MP3", "FLAC", "AAC", "OGG", "WAV")
     val bitrates = listOf("128kbps", "256kbps", "320kbps", "Lossless")
@@ -240,6 +243,31 @@ fun DownloaderDeckTab(viewModel: MusicViewModel, accentColor: Color, secColor: C
 
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    Text("SOURCE PLATFORM", style = MaterialTheme.typography.labelSmall, color = Color.White, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        platforms.forEach { platform ->
+                            val isSelected = sourcePlatform == platform
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isSelected) accentColor else HoloBg)
+                                    .border(1.dp, if (isSelected) accentColor else Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                                    .clickable { sourcePlatform = platform }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(platform, color = if (isSelected) DeepVoid else Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     OutlinedTextField(
                         value = inputUrl,
                         onValueChange = { inputUrl = it },
@@ -251,7 +279,13 @@ fun DownloaderDeckTab(viewModel: MusicViewModel, accentColor: Color, secColor: C
                             unfocusedTextColor = Color.White
                         ),
                         singleLine = true,
-                        placeholder = { Text("https://music.apple.com/...", color = TextGray) }
+                        placeholder = { 
+                            Text(
+                                if (sourcePlatform == "Direct URL") "https://music.apple.com/..." 
+                                else "Search query...", 
+                                color = TextGray
+                            ) 
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -309,7 +343,13 @@ fun DownloaderDeckTab(viewModel: MusicViewModel, accentColor: Color, secColor: C
                     Button(
                         onClick = {
                             if (inputUrl.isNotBlank()) {
-                                viewModel.downloadManager.startDownload(inputUrl, targetFormat, targetBitrate)
+                                val finalUrl = when (sourcePlatform) {
+                                    "YouTube Music" -> "ytmsearch1:$inputUrl"
+                                    "SoundCloud" -> "scsearch1:$inputUrl"
+                                    "Spotify" -> "spsearch1:$inputUrl"
+                                    else -> inputUrl
+                                }
+                                viewModel.downloadManager.startDownload(finalUrl, targetFormat, targetBitrate)
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = accentColor),
@@ -503,7 +543,7 @@ fun ScannerDeckTab(viewModel: MusicViewModel, accentColor: Color, secColor: Colo
                         Button(
                             onClick = {
                                 scope.launch(Dispatchers.IO) {
-                                    val added = viewModel.libraryScanner.scanDirectory("/storage/emulated/0/Music/Crysta")
+                                    val added = viewModel.libraryScanner.scanDirectory("/storage/emulated/0/Music/M-scraper")
                                     withContext(Dispatchers.Main) {
                                         Toast.makeText(context, "SCAN COMPLETED! cataloged $added NEW FILES.", Toast.LENGTH_LONG).show()
                                     }

@@ -33,7 +33,7 @@ data class RoutingSettings(
 data class LibrarySettings(
     val autoScan: Boolean = true,
     val ignoreDuplicates: Boolean = false,
-    val scanPaths: String = "/storage/emulated/0/Music/Crysta"
+    val scanPaths: String = "/storage/emulated/0/Music/M-scraper"
 )
 
 data class NetworkSettings(
@@ -54,7 +54,7 @@ data class AdvancedSettings(
 )
 
 class SettingsManager(context: Context) {
-    private val prefs = context.getSharedPreferences("crysta_settings_v1", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("m-scraper_settings_v1", Context.MODE_PRIVATE)
 
     // Save/Load helpers for Settings Categorization (Task 5.2)
     fun saveDownloadSettings(settings: DownloadSettings) {
