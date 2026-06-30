@@ -1,6 +1,7 @@
 package com.example.screens
 
 import androidx.compose.animation.core.*
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,6 +48,8 @@ import coil.request.SuccessResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+enum class DisplayMode { RECORD, LYRICS, VISUALIZER }
+
 @Composable
 fun NowPlayingScreen(navController: NavController, viewModel: MusicViewModel) {
     val currentTrack by viewModel.currentTrack.collectAsState()
@@ -62,6 +65,7 @@ fun NowPlayingScreen(navController: NavController, viewModel: MusicViewModel) {
     val sleepMinutes by viewModel.sleepTimerMinutes.collectAsState()
     val sleepSecondsLeft by viewModel.sleepTimerSecondsLeft.collectAsState()
     var showSleepTimerDialog by remember { mutableStateOf(false) }
+    var displayMode by remember { mutableStateOf(DisplayMode.RECORD) }
 
     val haptic = LocalHapticFeedback.current
 
@@ -193,39 +197,93 @@ fun NowPlayingScreen(navController: NavController, viewModel: MusicViewModel) {
             )
             Spacer(modifier = Modifier.weight(1f))
             
-            HorizontalPager(
-                state = pagerState,
+            // Middle Interactive View Mode Area
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
-            ) { page ->
-                val trackForPage = if (queue.isEmpty()) track else queue[page]
-                RotatingRecord(
-                    isPlaying = isPlaying && (trackForPage.id == track.id), 
-                    imageUrl = trackForPage.imageUrl, 
-                    accentColor = accentColor, 
-                    secColor = secColor
-                )
+                    .clickable {
+                        displayMode = when (displayMode) {
+                            DisplayMode.RECORD -> DisplayMode.LYRICS
+                            DisplayMode.LYRICS -> DisplayMode.VISUALIZER
+                            DisplayMode.VISUALIZER -> DisplayMode.RECORD
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                when (displayMode) {
+                    DisplayMode.RECORD -> {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize()
+                        ) { page ->
+                            val trackForPage = if (queue.isEmpty()) track else queue[page]
+                            RotatingRecord(
+                                isPlaying = isPlaying && (trackForPage.id == track.id), 
+                                imageUrl = trackForPage.imageUrl, 
+                                accentColor = accentColor, 
+                                secColor = secColor
+                            )
+                        }
+                    }
+                    DisplayMode.LYRICS -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize(0.9f)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(Color.White.copy(alpha = 0.05f))
+                                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            LyricsDisplay(
+                                progress = progress,
+                                modifier = Modifier.fillMaxSize(),
+                                primaryColor = accentColor
+                            )
+                        }
+                    }
+                    DisplayMode.VISUALIZER -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AudioVisualizer(
+                                isPlaying = isPlaying,
+                                modifier = Modifier.size(240.dp),
+                                style = visualizerStyle,
+                                primaryColor = accentColor,
+                                secondaryColor = secColor
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Interactive Selector Indicator Dots
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                DisplayMode.values().forEach { mode ->
+                    val isActive = displayMode == mode
+                    Box(
+                        modifier = Modifier
+                            .height(6.dp)
+                            .width(if (isActive) 16.dp else 6.dp)
+                            .clip(CircleShape)
+                            .background(if (isActive) accentColor else Color.White.copy(alpha = 0.3f))
+                            .clickable { displayMode = mode }
+                            .animateContentSize()
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
             SongInfo(track, accentColor)
             Spacer(modifier = Modifier.height(16.dp))
             ActionButtons(track, favTracks, viewModel, accentColor)
-            Spacer(modifier = Modifier.height(16.dp))
-            AudioVisualizer(
-                isPlaying = isPlaying,
-                modifier = if (visualizerStyle == "ORBIT" || visualizerStyle == "NEON_PULSE") {
-                    Modifier.size(110.dp)
-                } else {
-                    Modifier.height(45.dp).width(140.dp)
-                },
-                style = visualizerStyle,
-                primaryColor = accentColor,
-                secondaryColor = secColor
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            LyricsDisplay(progress = progress, modifier = Modifier.weight(1f), primaryColor = accentColor)
             Spacer(modifier = Modifier.height(16.dp))
             ProgressBar(progress = progress, durationStr = track.duration, accentColor = accentColor, secColor = secColor)
             Spacer(modifier = Modifier.height(32.dp))
