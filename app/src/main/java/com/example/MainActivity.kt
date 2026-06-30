@@ -12,11 +12,22 @@ import com.example.navigation.MainAppScreen
 import com.example.ui.components.CRTEffect
 import com.example.ui.theme.DeepVoid
 import com.example.ui.theme.MyApplicationTheme
+import uniffi.mmdlp.MmDlpEngine
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
+    
+    // Start local Rust Actix backend server in the background
+    try {
+        val engine = MmDlpEngine()
+        engine.startBackendServer(8080.toUShort())
+        android.util.Log.d("MainActivity", "Rust Actix server started on port 8080")
+    } catch (e: Exception) {
+        android.util.Log.e("MainActivity", "Failed to start Rust Actix server", e)
+    }
+
     setContent {
       MyApplicationTheme {
         Surface(modifier = Modifier.fillMaxSize(), color = DeepVoid) {

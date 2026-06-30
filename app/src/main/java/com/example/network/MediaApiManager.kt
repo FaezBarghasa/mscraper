@@ -38,7 +38,7 @@ interface ReturnYouTubeDislikeApi {
 }
 
 object MediaApiManager {
-    private const val PIPED_BASE_URL = "https://pipedapi.kavin.rocks/"
+    private const val PIPED_BASE_URL = "http://127.0.0.1:8080/"
     private const val SPONSORBLOCK_BASE_URL = "https://sponsor.ajay.app/api/"
     private const val RYD_BASE_URL = "https://returnyoutubedislikeapi.com/"
 

@@ -29,7 +29,7 @@ class SurrealDbService(context: Context) {
         .build()
 
     // Configuration Accessors
-    fun getEndpoint(): String = prefs.getString("endpoint", "http://10.0.2.2:8000") ?: "http://10.0.2.2:8000"
+    fun getEndpoint(): String = prefs.getString("endpoint", "http://127.0.0.1:8080") ?: "http://127.0.0.1:8080"
     fun getNamespace(): String = prefs.getString("namespace", "m-scraper") ?: "m-scraper"
     fun getDatabase(): String = prefs.getString("database", "music") ?: "music"
     fun getUsername(): String = prefs.getString("username", "root") ?: "root"
