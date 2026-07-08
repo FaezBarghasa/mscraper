@@ -1,7 +1,7 @@
 package com.example.ui.search
 
 import com.example.core.MmDlpApi
-import com.example.core.Track
+import com.example.model.Track
 import com.example.model.SearchSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,9 +25,9 @@ class SearchViewModelTest {
             return emptyList()
         }
 
-        override suspend fun exportPlaylistJson(playlistName: String, tracks: List<com.example.model.Track>): String = ""
-        override suspend fun exportPlaylistXml(playlistName: String, tracks: List<com.example.model.Track>): String = ""
-        override suspend fun importPlaylistJson(json: String): Pair<String, List<com.example.model.Track>> = "" to emptyList()
+        override suspend fun exportPlaylistJson(playlistName: String, tracks: List<Track>): String = ""
+        override suspend fun exportPlaylistXml(playlistName: String, tracks: List<Track>): String = ""
+        override suspend fun importPlaylistJson(json: String): Pair<String, List<Track>> = "" to emptyList()
         override fun setNetworkConfig(enableQuic: Boolean) {}
     }
 
