@@ -48,17 +48,18 @@ fun SearchScreen(
         com.example.ui.downloads.FormatPickerDialog(
             onDismiss = { showFormatPicker = false; trackToDownload = null },
             onFormatSelected = { format ->
-                // In a real app, we'd need to extract the audio stream URL first
-                // For this implementation, we'll assume the search result coreTrack might have it 
-                // or we use a proxy URL for demonstration.
-                val coreTrack = searchResults.find { it.videoId == trackToDownload!!.id }
+                val coreTrack = searchResults.find { it.trackId == trackToDownload!!.id }
                 if (coreTrack != null) {
                     downloadViewModel.startDownload(
                         title = coreTrack.title,
-                        artist = coreTrack.artists.joinToString(", "),
-                        imageUrl = coreTrack.coverUrl,
-                        videoUrl = "https://www.youtube.com/watch?v=${coreTrack.videoId}",
-                        audioUrl = "", // Would be resolved via Rust core or MediaApiManager
+                        artist = coreTrack.artist,
+                        imageUrl = coreTrack.albumArtUrl ?: "",
+                        videoUrl = if (coreTrack.source == com.example.core.ffi.AudioSource.YOUTUBE_MUSIC) {
+                            "https://www.youtube.com/watch?v=${coreTrack.trackId}"
+                        } else {
+                            coreTrack.trackId
+                        },
+                        audioUrl = "",
                         format = format
                     )
                     showFormatPicker = false
@@ -128,11 +129,11 @@ fun SearchScreen(
             } else {
                 val uiTracks = searchResults.map { coreTrack ->
                     Track(
-                        id = coreTrack.videoId,
+                        id = coreTrack.trackId,
                         title = coreTrack.title,
-                        artist = coreTrack.artists.joinToString(", "),
-                        duration = "${coreTrack.durationSeconds / 60}:${(coreTrack.durationSeconds % 60).toString().padStart(2, '0')}",
-                        imageUrl = coreTrack.coverUrl,
+                        artist = coreTrack.artist,
+                        duration = "3:00",
+                        imageUrl = coreTrack.albumArtUrl ?: "",
                         genre = selectedSource.displayName
                     )
                 }

@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.core.MmDlpApi
 import com.example.core.MmDlpApiImpl
-import com.example.core.Track
+import com.example.core.ffi.TrackMetadata
 import com.example.model.SearchSource
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
@@ -21,8 +21,8 @@ class SearchViewModel(
     private val _selectedSource = MutableStateFlow(SearchSource.YOUTUBE)
     val selectedSource: StateFlow<SearchSource> = _selectedSource.asStateFlow()
 
-    private val _searchResults = MutableStateFlow<List<Track>>(emptyList())
-    val searchResults: StateFlow<List<Track>> = _searchResults.asStateFlow()
+    private val _searchResults = MutableStateFlow<List<TrackMetadata>>(emptyList())
+    val searchResults: StateFlow<List<TrackMetadata>> = _searchResults.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
