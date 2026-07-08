@@ -20,6 +20,11 @@ import uniffi.mmdlp.MmDlpEngine
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
+    // JNA configuration for Android
+    System.setProperty("jna.nosys", "false")
+    System.setProperty("jna.nounpack", "false")
+    System.setProperty("jna.boot.library.path", applicationInfo.nativeLibraryDir)
+
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     

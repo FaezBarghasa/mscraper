@@ -23,7 +23,7 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
     ndk {
-      abiFilters.add("arm64-v8a")
+      abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86"))
     }
   }
 
@@ -51,6 +51,11 @@ android {
       signingConfig = signingConfigs.getByName("release")
     }
     debug {
+    }
+  }
+  packaging {
+    jniLibs {
+      useLegacyPackaging = true
     }
   }
   compileOptions {
@@ -96,11 +101,7 @@ configurations.all {
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
 dependencies {
-  implementation(libs.jna) {
-    artifact {
-      type = "aar"
-    }
-  }
+  implementation(libs.jna)
   implementation(platform(libs.androidx.compose.bom))
   implementation(platform(libs.firebase.bom))
   // implementation(libs.accompanist.permissions)

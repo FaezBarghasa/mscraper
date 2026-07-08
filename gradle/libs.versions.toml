@@ -41,7 +41,7 @@ secretsGradlePlugin = "2.0.1"
 googleServices = "4.5.0"
 mockito = "5.11.0"
 mockitoKotlin = "5.2.1"
-jna = "5.16.0"
+jna = "5.19.1"
 
 media3 = "1.4.0"
 playServicesCronet = "18.1.0"
