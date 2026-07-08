@@ -18,7 +18,7 @@ class MmDlpApiImpl : MmDlpApi {
 
     override suspend fun search(query: String, source: SearchSource): List<Track> = withContext(Dispatchers.IO) {
         val ffiSource = when (source) {
-            SearchSource.YOUTUBE -> com.example.core.ffi.AudioSource.YOUTUBE_MUSIC
+            SearchSource.YOUTUBE -> com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC
             SearchSource.SOUNDCLOUD -> com.example.core.ffi.AudioSource.SOUND_CLOUD
             SearchSource.SPOTIFY -> com.example.core.ffi.AudioSource.SPOTIFY
         }
@@ -52,7 +52,7 @@ class MmDlpApiImpl : MmDlpApi {
             name = playlistName,
             description = null,
             tracks = ffiTracks,
-            source = com.example.core.ffi.AudioSource.YOUTUBE_MUSIC
+            source = com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC
         )
         ffiApi.exportPlaylistJson(ffiPlaylist)
     }
@@ -73,7 +73,7 @@ class MmDlpApiImpl : MmDlpApi {
             name = playlistName,
             description = null,
             tracks = ffiTracks,
-            source = com.example.core.ffi.AudioSource.YOUTUBE_MUSIC
+            source = com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC
         )
         ffiApi.exportPlaylistXml(ffiPlaylist)
     }

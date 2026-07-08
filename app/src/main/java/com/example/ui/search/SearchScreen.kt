@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.model.SearchSource
 import com.example.model.Track
 import com.example.ui.components.SourceSelector
 import com.example.ui.components.TrackList
@@ -48,16 +49,16 @@ fun SearchScreen(
         com.example.ui.downloads.FormatPickerDialog(
             onDismiss = { showFormatPicker = false; trackToDownload = null },
             onFormatSelected = { format ->
-                val coreTrack = searchResults.find { it.trackId == trackToDownload!!.id }
+                val coreTrack = searchResults.find { it.id == trackToDownload!!.id }
                 if (coreTrack != null) {
                     downloadViewModel.startDownload(
                         title = coreTrack.title,
                         artist = coreTrack.artist,
-                        imageUrl = coreTrack.albumArtUrl ?: "",
-                        videoUrl = if (coreTrack.source == com.example.core.ffi.AudioSource.YOUTUBE_MUSIC) {
-                            "https://www.youtube.com/watch?v=${coreTrack.trackId}"
+                        imageUrl = coreTrack.imageUrl,
+                        videoUrl = if (selectedSource == SearchSource.YOUTUBE) {
+                            "https://www.youtube.com/watch?v=${coreTrack.id}"
                         } else {
-                            coreTrack.trackId
+                            coreTrack.id
                         },
                         audioUrl = "",
                         format = format
@@ -127,16 +128,7 @@ fun SearchScreen(
                     CircularProgressIndicator(color = accentColor)
                 }
             } else {
-                val uiTracks = searchResults.map { coreTrack ->
-                    Track(
-                        id = coreTrack.trackId,
-                        title = coreTrack.title,
-                        artist = coreTrack.artist,
-                        duration = "3:00",
-                        imageUrl = coreTrack.albumArtUrl ?: "",
-                        genre = selectedSource.displayName
-                    )
-                }
+                val uiTracks = searchResults
 
                 TrackList(
                     tracks = uiTracks,
