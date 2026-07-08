@@ -82,19 +82,30 @@ fun NowPlayingScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        Text(
-            text = currentTrack?.title ?: "No Signal Detected",
-            color = Color.White,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1
-        )
-        Text(
-            text = currentTrack?.artist ?: "Unknown Origin",
-            color = accentColor,
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1
-        )
+        // Animated Track Info
+        AnimatedContent(
+            targetState = currentTrack,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+            },
+            label = "TrackInfo"
+        ) { track ->
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = track?.title ?: "No Signal Detected",
+                    color = Color.White,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+                Text(
+                    text = track?.artist ?: "Unknown Origin",
+                    color = accentColor,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 
