@@ -3,6 +3,7 @@ package com.example.data.storage
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -13,7 +14,7 @@ import java.io.FileOutputStream
 class PublicStorageManagerTest {
 
     @Test
-    fun moveToPublicDownloadsWritesFile() {
+    fun moveToPublicDownloadsWritesFile() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val tempFile = File(context.cacheDir, "test_audio.mp3")
         FileOutputStream(tempFile).use { it.write("test data".toByteArray()) }

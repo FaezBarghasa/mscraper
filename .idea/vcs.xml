@@ -2,5 +2,14 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp/target/aarch64-linux-android/release/build/boring-sys-43a1e7ab1f407357/out/boringssl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp/target/aarch64-linux-android/release/build/ffmpeg-sys-next-a266e9b3732c65b7/out/ffmpeg-8.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp/target/debug/build/boring-sys-048382a281e7e923/out/boringssl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp/target/debug/build/boring-sys-0fe6e6ba29353f49/out/boringssl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp/target/debug/build/boring-sys-ab0d94c1618abb92/out/boringssl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp/target/debug/build/ffmpeg-sys-next-00e8f1cb9113dcdb/out/ffmpeg-8.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp/target/debug/build/ffmpeg-sys-next-3032e20d2fec1173/out/ffmpeg-8.1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp/target/debug/build/ffmpeg-sys-next-95fa93f3a4872172/out/ffmpeg-8.1" vcs="Git" />
   </component>
 </project>
