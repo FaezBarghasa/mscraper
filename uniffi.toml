@@ -1,2 +1,2 @@
 [bindings.kotlin]
-package_name = "com.example.core"
+package_name = "com.example.core.ffi"

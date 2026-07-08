@@ -3,7 +3,7 @@
 
 @file:Suppress("NAME_SHADOWING")
 
-package com.example.core
+package com.example.core.ffi
 
 // Common helper code.
 //

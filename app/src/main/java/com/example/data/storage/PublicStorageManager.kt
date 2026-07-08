@@ -34,7 +34,7 @@ object PublicStorageManager {
         tempFilePath: String,
         fileName: String,
         mimeType: String,
-    ) = withContext(Dispatchers.IO) {
+    ): Uri = withContext(Dispatchers.IO) {
         val safeName = sanitizeFileName(fileName)
         val resolver = context.contentResolver
 
@@ -72,6 +72,8 @@ object PublicStorageManager {
 
             // Delete the Rust core's temp file
             File(tempFilePath).delete()
+            
+            uri
         } catch (e: Exception) {
             // Clean up dangling pending entry before re-throwing
             resolver.delete(uri, null, null)

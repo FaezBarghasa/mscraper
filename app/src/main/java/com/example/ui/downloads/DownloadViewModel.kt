@@ -65,24 +65,36 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
                         }
 
                         override fun onComplete() {
-                            val publicUri = PublicStorageManager.moveToPublicDownloads(
-                                context = getApplication(),
-                                tempFilePath = tempFile.absolutePath,
-                                fileName = "${title}.${format.lowercase()}",
-                                mimeType = when(format.lowercase()) {
-                                    "flac" -> "audio/flac"
-                                    "wav" -> "audio/wav"
-                                    else -> "audio/mpeg"
-                                }
-                            )
-                            
-                            _tasks.update { list ->
-                                list.map { 
-                                    if (it.id == taskId) it.copy(
-                                        status = DownloadStatus.COMPLETED, 
-                                        progress = 1f,
-                                        fileUri = publicUri
-                                    ) else it 
+                            viewModelScope.launch {
+                                try {
+                                    val publicUri = PublicStorageManager.moveToPublicDownloads(
+                                        context = getApplication(),
+                                        tempFilePath = tempFile.absolutePath,
+                                        fileName = "${title}.${format.lowercase()}",
+                                        mimeType = when(format.lowercase()) {
+                                            "flac" -> "audio/flac"
+                                            "wav" -> "audio/wav"
+                                            else -> "audio/mpeg"
+                                        }
+                                    )
+                                    _tasks.update { list ->
+                                        list.map { 
+                                            if (it.id == taskId) it.copy(
+                                                status = DownloadStatus.COMPLETED, 
+                                                progress = 1f,
+                                                fileUri = publicUri
+                                            ) else it 
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    _tasks.update { list ->
+                                        list.map { 
+                                            if (it.id == taskId) it.copy(
+                                                status = DownloadStatus.ERROR, 
+                                                error = e.localizedMessage 
+                                            ) else it 
+                                        }
+                                    }
                                 }
                             }
                         }
