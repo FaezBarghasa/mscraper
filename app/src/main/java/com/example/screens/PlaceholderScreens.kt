@@ -489,674 +489,7 @@ fun LibraryScreen(
     }
 }
 
-@Composable
-fun SettingsScreen(navController: NavController, viewModel: MusicViewModel = viewModel()) {
-    val crossfadeEnabled by viewModel.crossfadeEnabled.collectAsState()
-    val crossfadeDuration by viewModel.crossfadeDuration.collectAsState()
-    val sleepTimer by viewModel.sleepTimerMinutes.collectAsState()
-    val sleepSecondsLeft by viewModel.sleepTimerSecondsLeft.collectAsState()
-    val spatialAudio by viewModel.spatialAudio.collectAsState()
-    val audioQuality by viewModel.audioQuality.collectAsState()
-    val accentColorStr by viewModel.cyberAccentColor.collectAsState()
-    val hapticIntensity by viewModel.hapticIntensity.collectAsState()
-    val visualizerStyle by viewModel.visualizerStyle.collectAsState()
-    val offlineMode by viewModel.offlineMode.collectAsState()
-    val accentColor by viewModel.themePrimary.collectAsState()
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepVoid)
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Text("SYSTEM SETTINGS", style = MaterialTheme.typography.headlineMedium, color = accentColor, fontWeight = FontWeight.Bold)
-        Text("Configure visual aesthetics, audio decoders & haptic channels", style = MaterialTheme.typography.labelSmall, color = TextGray)
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        // 0. SYSTEM CORE OPERATIONS LINK
-        GlassCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .clickable { navController.navigate("core_deck") }
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(accentColor.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Filled.SettingsSuggest, contentDescription = null, tint = accentColor)
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text("SYSTEM CORE DECK", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                        Text("Downloader, Scanner, Backups & Sync Hub", style = MaterialTheme.typography.labelSmall, color = accentColor)
-                    }
-                }
-                Icon(Icons.Filled.ChevronRight, contentDescription = "Go", tint = accentColor)
-            }
-        }
-        
-        // 0.5. CONTEXT-AWARE SOURCE ROUTING SETTINGS
-        val isDownloadToggleActive by viewModel.isDownloadToggleActive.collectAsState()
-        val streamingPriority by viewModel.streamingSourcePriority.collectAsState()
-        val downloadPriority by viewModel.downloadSourcePriority.collectAsState()
-        val autoDownloadOnWifi by viewModel.autoDownloadOnWifi.collectAsState()
-        val minDownloadBitrate by viewModel.downloadMinQualityBitrate.collectAsState()
-
-        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    "CONTEXT-AWARE SOURCE ROUTING",
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "Assign separate source priorities and qualities depending on play actions.",
-                    color = TextGray,
-                    style = MaterialTheme.typography.labelSmall
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // STREAM vs DOWNLOAD MODE Toggle
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(HoloBg)
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    listOf(false to "🌐 STREAMING", true to "📥 DOWNLOAD").forEach { (isDownloadMode, label) ->
-                        val isSelected = isDownloadToggleActive == isDownloadMode
-                        val buttonColor = if (isSelected) accentColor else Color.Transparent
-                        val textColor = if (isSelected) DeepVoid else TextGray
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(buttonColor)
-                                .clickable { viewModel.toggleStreamDownloadMode() }
-                                .padding(vertical = 10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = textColor
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Priority Displays
-                Text(
-                    text = "ACTIVE STREAM ROUTING PROFILE:",
-                    color = accentColor,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = streamingPriority.joinToString(" ➔ "),
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                val secondaryColor = viewModel.themeSecondary.collectAsState().value
-                Text(
-                    text = "ACTIVE ARCHIVE DOWNLOAD ROUTING PROFILE:",
-                    color = secondaryColor,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = downloadPriority.joinToString(" ➔ "),
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Min download quality choice
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Download Min Quality Threshold", color = Color.White, style = MaterialTheme.typography.titleSmall)
-                        Text("Skip download blocks below this quality", color = TextGray, style = MaterialTheme.typography.labelSmall)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(128, 256, 320).forEach { br ->
-                            val isSelected = minDownloadBitrate == br
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) accentColor else HoloBg)
-                                    .border(1.dp, if (isSelected) accentColor else Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                    .clickable { viewModel.setDownloadMinQualityBitrate(br) }
-                                    .padding(horizontal = 8.dp, vertical = 6.dp)
-                            ) {
-                                Text(
-                                    text = "${br}k",
-                                    color = if (isSelected) DeepVoid else Color.White,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Auto-Download on Wi-Fi
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Auto-Download on Wi-Fi", color = Color.White, style = MaterialTheme.typography.titleSmall)
-                        Text("Background archive streamed signals over Wi-Fi", color = TextGray, style = MaterialTheme.typography.labelSmall)
-                    }
-                    Switch(
-                        checked = autoDownloadOnWifi,
-                        onCheckedChange = { viewModel.toggleAutoDownloadOnWifi() },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = accentColor,
-                            checkedTrackColor = accentColor.copy(alpha = 0.3f)
-                        )
-                    )
-                }
-            }
-        }
-        
-        // 1. Theme Color Selection (Aesthetic Sync)
-        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("NEON ACCENT SYNC", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("Select highlight frequency for the entire holographic system", color = TextGray, style = MaterialTheme.typography.labelSmall)
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    val colorsList = listOf("NEON TOKYO", "DATA GLITCH", "ACID RAIN", "CYAN")
-                    val colorValues = listOf(com.example.ui.theme.TokyoBlue, com.example.ui.theme.GlitchGreen, com.example.ui.theme.AcidRed, CyberCyan)
-                    
-                    colorsList.forEachIndexed { i, name ->
-                        val isSelected = accentColorStr == name
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { viewModel.setCyberAccentColor(name) }
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(colorValues[i])
-                                    .border(if (isSelected) 3.dp else 0.dp, Color.White, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (isSelected) {
-                                    Icon(Icons.Filled.Check, contentDescription = null, tint = DeepVoid, modifier = Modifier.size(24.dp))
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                name.replace(" ", "\n"), 
-                                style = MaterialTheme.typography.labelSmall, 
-                                color = if (isSelected) colorValues[i] else TextGray,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // 2. Audio Engine Settings
-        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("AUDIO DSP ENGINE", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                // Crossfade Toggle
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("Crossfade Tracks", color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                        Text("Smooth overlapping transition", color = TextGray, style = MaterialTheme.typography.labelSmall)
-                    }
-                    Switch(
-                        checked = crossfadeEnabled,
-                        onCheckedChange = { viewModel.toggleCrossfade() },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = accentColor,
-                            checkedTrackColor = accentColor.copy(alpha = 0.5f),
-                            uncheckedThumbColor = TextGray,
-                            uncheckedTrackColor = HoloBg
-                        )
-                    )
-                }
-
-                if (crossfadeEnabled) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Crossfade Duration", color = TextGray, style = MaterialTheme.typography.bodySmall)
-                            Text("${String.format("%.1f", crossfadeDuration)}s", color = accentColor, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                        }
-                        Slider(
-                            value = crossfadeDuration,
-                            onValueChange = { viewModel.setCrossfadeDuration(it) },
-                            valueRange = 0f..10f,
-                            colors = SliderDefaults.colors(
-                                thumbColor = accentColor,
-                                activeTrackColor = accentColor,
-                                inactiveTrackColor = HoloBg
-                            )
-                        )
-                    }
-                }
-
-                HorizontalDivider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 12.dp))
-
-                // 3D Spatial Audio Mode
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("Holographic Spatial Audio", color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                        Text("Virtualize immersive 3D sound field", color = TextGray, style = MaterialTheme.typography.labelSmall)
-                    }
-                    Switch(
-                        checked = spatialAudio,
-                        onCheckedChange = { viewModel.toggleSpatialAudio() },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = accentColor,
-                            checkedTrackColor = accentColor.copy(alpha = 0.5f),
-                            uncheckedThumbColor = TextGray,
-                            uncheckedTrackColor = HoloBg
-                        )
-                    )
-                }
-
-                if (spatialAudio) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.Black.copy(alpha = 0.4f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val infiniteTransition = rememberInfiniteTransition()
-                        val rotateAngle by infiniteTransition.animateFloat(
-                            initialValue = 0f,
-                            targetValue = 360f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(10000, easing = LinearEasing)
-                            )
-                        )
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            val center = Offset(size.width / 2, size.height / 2)
-                            drawCircle(
-                                color = accentColor.copy(alpha = 0.2f),
-                                radius = 30.dp.toPx(),
-                                style = Stroke(width = 1.dp.toPx())
-                            )
-                            drawCircle(
-                                color = accentColor.copy(alpha = 0.4f),
-                                radius = 20.dp.toPx(),
-                                style = Stroke(width = 1.dp.toPx())
-                            )
-                            drawCircle(
-                                color = accentColor,
-                                radius = 5.dp.toPx()
-                            )
-                            
-                            // Draw speakers
-                            val angleRad = Math.toRadians(rotateAngle.toDouble())
-                            val xOffset = (25.dp.toPx() * Math.cos(angleRad)).toFloat()
-                            val yOffset = (25.dp.toPx() * Math.sin(angleRad)).toFloat()
-                            
-                            drawCircle(
-                                color = NeonMagenta,
-                                radius = 4.dp.toPx(),
-                                center = Offset(center.x + xOffset, center.y + yOffset)
-                            )
-                            drawCircle(
-                                color = CyberCyan,
-                                radius = 4.dp.toPx(),
-                                center = Offset(center.x - xOffset, center.y - yOffset)
-                            )
-                        }
-                        Text("3D FIELD ACTIVE", style = MaterialTheme.typography.labelSmall, color = accentColor, fontWeight = FontWeight.Bold)
-                    }
-                }
-                
-                HorizontalDivider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 12.dp))
-
-                // Multi-band Graphic Equalizer
-                Text("MULTI-BAND GRAPHIC EQUALIZER", color = Color.White, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                var eqPreset by remember { mutableStateOf("Synthwave") }
-                val presets = listOf("Flat", "Electronic", "Synthwave", "Cyber-Bass")
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    presets.forEach { preset ->
-                        val isSelected = eqPreset == preset
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) accentColor else HoloBg)
-                                .border(1.dp, if (isSelected) accentColor else Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                .clickable { 
-                                    eqPreset = preset
-                                    viewModel.setHapticIntensity(if(preset == "Cyber-Bass") "HIGH" else "DYNAMIC")
-                                }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = preset,
-                                color = if (isSelected) DeepVoid else Color.White,
-                                style = MaterialTheme.typography.labelSmall,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Equalizer Sliders
-                val bands = listOf("60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz")
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(150.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    bands.forEachIndexed { index, label ->
-                        // Simulated EQ values based on preset
-                        var value by remember(eqPreset) { 
-                            mutableStateOf(
-                                when (eqPreset) {
-                                    "Electronic" -> when(index) { 0 -> 0.8f; 1 -> 0.6f; 2 -> 0.4f; 3 -> 0.7f; 4 -> 0.9f; else -> 0.5f }
-                                    "Synthwave" -> when(index) { 0 -> 0.7f; 1 -> 0.5f; 2 -> 0.6f; 3 -> 0.8f; 4 -> 0.7f; else -> 0.5f }
-                                    "Cyber-Bass" -> when(index) { 0 -> 1.0f; 1 -> 0.8f; 2 -> 0.3f; 3 -> 0.5f; 4 -> 0.6f; else -> 0.5f }
-                                    else -> 0.5f // Flat
-                                }
-                            )
-                        }
-                        
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxHeight()
-                        ) {
-                            // Vertical Slider implementation
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .width(4.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(HoloBg),
-                                contentAlignment = Alignment.BottomCenter
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .fillMaxHeight(value)
-                                        .background(accentColor)
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(label, color = TextGray, style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                }
-            }
-        }
-
-        // 3. Sleep Timer Controller
-        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("SLEEP DEACTIVATOR", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("Automatically cease audio emissions", color = TextGray, style = MaterialTheme.typography.labelSmall)
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(0, 15, 30, 60).forEach { mins ->
-                        val isSelected = sleepTimer == mins
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) accentColor else HoloBg)
-                                .border(1.dp, if (isSelected) accentColor else Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                .clickable { viewModel.setSleepTimer(mins) }
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (mins == 0) "OFF" else "$mins MIN",
-                                color = if (isSelected) DeepVoid else Color.White,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-
-                if (sleepTimer > 0) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(accentColor.copy(alpha = 0.1f))
-                            .border(1.dp, accentColor.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
-                            .padding(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val hrs = sleepSecondsLeft / 3600
-                            val mins = (sleepSecondsLeft % 3600) / 60
-                            val secs = sleepSecondsLeft % 60
-                            val timeStr = String.format("%02d:%02d:%02d", hrs, mins, secs)
-                            
-                            Column {
-                                Text("T-MINUS COUNTDOWN", style = MaterialTheme.typography.labelSmall, color = TextGray)
-                                Text(timeStr, style = MaterialTheme.typography.titleMedium, color = accentColor, fontWeight = FontWeight.Bold)
-                            }
-                            IconButton(onClick = { viewModel.setSleepTimer(0) }) {
-                                Icon(Icons.Filled.Close, contentDescription = "Cancel", tint = NeonMagenta)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // 4. Stream Quality and Codec Settings
-        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("OUTPUT STREAM CONFIG", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                val qualities = listOf("STATION (320kbps)", "HIGH-RES (24bit)", "LOSSLESS (FLAC)")
-                qualities.forEach { q ->
-                    val isSelected = audioQuality == q
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) Color.White.copy(alpha = 0.05f) else Color.Transparent)
-                            .clickable { viewModel.setAudioQuality(q) }
-                            .padding(vertical = 12.dp, horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(q, color = if (isSelected) accentColor else Color.White, style = MaterialTheme.typography.bodyMedium)
-                        RadioButton(
-                            selected = isSelected,
-                            onClick = { viewModel.setAudioQuality(q) },
-                            colors = RadioButtonDefaults.colors(
-                                selectedColor = accentColor,
-                                unselectedColor = TextGray
-                            )
-                        )
-                    }
-                }
-                
-                HorizontalDivider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 12.dp))
-
-                val quicEnabled by viewModel.quicEnabled.collectAsState()
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("QUIC / HTTP3 Streaming", color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                        Text("Enable low-latency streaming via Cronet", color = TextGray, style = MaterialTheme.typography.labelSmall)
-                    }
-                    Switch(
-                        checked = quicEnabled,
-                        onCheckedChange = { viewModel.toggleQuicStream() },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = accentColor,
-                            checkedTrackColor = accentColor.copy(alpha = 0.5f),
-                            uncheckedThumbColor = TextGray,
-                            uncheckedTrackColor = HoloBg
-                        )
-                    )
-                }
-
-                HorizontalDivider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Offline Local Cache Only", color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                        Text("Disable cloud syncing, reduce network radiation", color = TextGray, style = MaterialTheme.typography.labelSmall)
-                    }
-                    Switch(
-                        checked = offlineMode,
-                        onCheckedChange = { viewModel.toggleOfflineMode() },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = accentColor,
-                            checkedTrackColor = accentColor.copy(alpha = 0.5f),
-                            uncheckedThumbColor = TextGray,
-                            uncheckedTrackColor = HoloBg
-                        )
-                    )
-                }
-            }
-        }
-
-        // 5. Visualizer Engine style
-        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("VISUALIZER PROTOCOLS", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                val styles = listOf("BARS", "WAVE", "ORBIT", "NEON_PULSE")
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    styles.forEach { style ->
-                        val isSelected = visualizerStyle == style
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) accentColor else HoloBg)
-                                .border(1.dp, if (isSelected) accentColor else Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                .clickable { viewModel.setVisualizerStyle(style) }
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(style, color = if (isSelected) DeepVoid else Color.White, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-        }
-
-        // 6. Haptic Feedback Intensity
-        GlassCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("TACTILE COGNITIVE DRIVER", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("Haptic vibrations when skipping and clicking UI nodes", color = TextGray, style = MaterialTheme.typography.labelSmall)
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                val intensities = listOf("OFF", "LOW", "HIGH", "DYNAMIC")
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    intensities.forEach { style ->
-                        val isSelected = hapticIntensity == style
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) accentColor else HoloBg)
-                                .border(1.dp, if (isSelected) accentColor else Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                .clickable { viewModel.setHapticIntensity(style) }
-                                .padding(vertical = 10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(style, color = if (isSelected) DeepVoid else Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(100.dp))
-    }
-}
+// SettingsScreen removed - replaced by com.example.ui.settings.SettingsScreen
 
 @Composable
 fun EqualizerScreen(viewModel: MusicViewModel = viewModel()) {
@@ -1398,76 +731,92 @@ fun PlaylistScreen(navController: NavController, viewModel: MusicViewModel = vie
     val favoriteTracksEntity by viewModel.favoriteTracks.collectAsState()
     val favoriteTrackIds = favoriteTracksEntity.map { it.id }.toSet()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepVoid)
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.background(Color.White.copy(alpha = 0.05f), CircleShape)
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = DeepVoid,
+        topBar = {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text("NOW PLAYING QUEUE", style = MaterialTheme.typography.headlineSmall, color = accentColor, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            
-            val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-            val context = androidx.compose.ui.platform.LocalContext.current
-            IconButton(
-                onClick = {
-                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    if (queue.isNotEmpty()) {
-                        queue.forEach { track ->
-                            val url = track.filePath.takeIf { it.isNotEmpty() } ?: "https://soundcloud.com/dummy/${track.title}"
-                            viewModel.downloadManager.startDownload(url, "mp3", "320kbps")
+                IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.background(Color.White.copy(alpha = 0.05f), CircleShape)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Text("NOW PLAYING QUEUE", style = MaterialTheme.typography.headlineSmall, color = accentColor, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                
+                com.example.ui.playlist.PlaylistMenu(
+                    playlistName = "Active_Queue",
+                    tracks = queue,
+                    onImportSuccess = { name, tracks ->
+                        viewModel.setQueue(tracks)
+                    },
+                    accentColor = accentColor,
+                    snackbarHostState = snackbarHostState
+                )
+
+                val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+                val context = androidx.compose.ui.platform.LocalContext.current
+                IconButton(
+                    onClick = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        if (queue.isNotEmpty()) {
+                            queue.forEach { track ->
+                                val url = track.filePath.takeIf { it.isNotEmpty() } ?: "https://soundcloud.com/dummy/${track.title}"
+                                viewModel.downloadManager.startDownload(url, "mp3", "320kbps")
+                            }
+                            android.widget.Toast.makeText(context, "Downloading Playlist...", android.widget.Toast.LENGTH_SHORT).show()
                         }
-                        android.widget.Toast.makeText(context, "Downloading Playlist...", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                },
-                modifier = Modifier.background(Color.White.copy(alpha = 0.05f), CircleShape)
-            ) {
-                Icon(Icons.Filled.Download, contentDescription = "Download All", tint = accentColor)
+                    },
+                    modifier = Modifier.background(Color.White.copy(alpha = 0.05f), CircleShape)
+                ) {
+                    Icon(Icons.Filled.Download, contentDescription = "Download All", tint = accentColor)
+                }
             }
         }
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Swipe items left to eject them from the live queue stream.", style = MaterialTheme.typography.labelSmall, color = TextGray)
-        Spacer(modifier = Modifier.height(20.dp))
-        
-        if (queue.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("QUEUE EMPTY. NO CHANNELS ASSIGNED.", style = MaterialTheme.typography.titleMedium, color = TextGray)
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Swipe items left to eject them from the live queue stream.", style = MaterialTheme.typography.labelSmall, color = TextGray)
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            if (queue.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("QUEUE EMPTY. NO CHANNELS ASSIGNED.", style = MaterialTheme.typography.titleMedium, color = TextGray)
+                }
+            } else {
+                com.example.ui.components.TrackList(
+                    tracks = queue,
+                    onTrackClick = { track ->
+                        viewModel.playTrack(track)
+                        navController.navigate("now_playing")
+                    },
+                    onTrackDismiss = { trackToRemove ->
+                        val updated = queue.filterNot { it.id == trackToRemove.id }
+                        viewModel.setQueue(updated)
+                    },
+                    onAddToQueue = { track ->
+                        viewModel.addToQueue(track)
+                    },
+                    onQueueNext = { track -> viewModel.addToQueue(track, com.example.viewmodel.QueuePosition.NEXT) },
+                    favoriteTrackIds = favoriteTrackIds,
+                    onFavoriteClick = { track -> viewModel.toggleFavorite(track) },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
-        } else {
-            com.example.ui.components.TrackList(
-                tracks = queue,
-                onTrackClick = { track ->
-                    viewModel.playTrack(track)
-                    navController.navigate("now_playing")
-                },
-                onTrackDismiss = { trackToRemove ->
-                    val updated = queue.filterNot { it.id == trackToRemove.id }
-                    viewModel.setQueue(updated)
-                },
-                onAddToQueue = { track ->
-                    // Already in queue, maybe move to next or just re-add?
-                    // We can just ignore or re-add
-                    viewModel.addToQueue(track)
-                },
-                onQueueNext = { track -> viewModel.addToQueue(track, com.example.viewmodel.QueuePosition.NEXT) },
-                favoriteTrackIds = favoriteTrackIds,
-                onFavoriteClick = { track -> viewModel.toggleFavorite(track) },
-                modifier = Modifier.fillMaxSize()
-            )
         }
     }
 }

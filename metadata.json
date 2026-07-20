@@ -1,5 +1,5 @@
 {
-  "name": "Crysta",
+  "name": "M-scraper",
   "description": "Cyberpunk music player app",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

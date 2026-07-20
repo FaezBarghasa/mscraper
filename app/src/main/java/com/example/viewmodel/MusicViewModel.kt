@@ -218,7 +218,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private val sessionPrefs = application.getSharedPreferences("crysta_session_v1", android.content.Context.MODE_PRIVATE)
+    private val sessionPrefs = application.getSharedPreferences("m-scraper_session_v1", android.content.Context.MODE_PRIVATE)
 
     private fun saveSession() {
         val editor = sessionPrefs.edit()
@@ -340,10 +340,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleStreamDownloadMode() {
         _isDownloadToggleActive.update { !it }
+        saveRoutingSettings()
     }
 
     fun toggleQuicStream() {
         _quicEnabled.update { !it }
+        savePlaybackSettings()
     }
 
     fun setStreamingSourcePriority(priority: List<String>) {
@@ -360,10 +362,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleAutoDownloadOnWifi() {
         _autoDownloadOnWifi.update { !it }
+        saveDownloadSettings()
     }
 
     fun setDownloadMinQualityBitrate(bitrate: Int) {
         _downloadMinQualityBitrate.value = bitrate
+        saveDownloadSettings()
     }
 
     fun applySettingsFromSync(
@@ -386,32 +390,47 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         _downloadMinQualityBitrate.value = minQualityBitrate
     }
 
-    // Theme support derived values
-    val themePrimary: StateFlow<Color> = _cyberAccentColor.map { color ->
-        when (color) {
-            "NEON TOKYO" -> com.example.ui.theme.TokyoBlue
-            "DATA GLITCH" -> com.example.ui.theme.GlitchGreen
-            "ACID RAIN" -> com.example.ui.theme.AcidRed
-            "CYAN" -> com.example.ui.theme.CyberCyan
-            "MAGENTA" -> com.example.ui.theme.NeonMagenta
-            "GREEN" -> com.example.ui.theme.PrimaryGreen
-            "ORANGE" -> Color(0xFFFF8800)
-            else -> com.example.ui.theme.TokyoBlue
+    private val _themePrimaryOverride = MutableStateFlow<Color?>(null)
+    private val _themeSecondaryOverride = MutableStateFlow<Color?>(null)
+
+    val themePrimary: StateFlow<Color> = combine(_cyberAccentColor, _themePrimaryOverride) { color, override ->
+        if (override != null && color == "DYNAMIC") {
+            override
+        } else {
+            when (color) {
+                "NEON TOKYO" -> com.example.ui.theme.TokyoBlue
+                "DATA GLITCH" -> com.example.ui.theme.GlitchGreen
+                "ACID RAIN" -> com.example.ui.theme.AcidRed
+                "CYAN" -> com.example.ui.theme.CyberCyan
+                "MAGENTA" -> com.example.ui.theme.NeonMagenta
+                "GREEN" -> com.example.ui.theme.PrimaryGreen
+                "ORANGE" -> Color(0xFFFF8800)
+                else -> com.example.ui.theme.TokyoBlue
+            }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.ui.theme.TokyoBlue)
 
-    val themeSecondary: StateFlow<Color> = _cyberAccentColor.map { color ->
-        when (color) {
-            "NEON TOKYO" -> com.example.ui.theme.TokyoPink
-            "DATA GLITCH" -> Color(0xFF00AA22) // Brighter secondary for visibility instead of black
-            "ACID RAIN" -> com.example.ui.theme.AcidPurple
-            "CYAN" -> com.example.ui.theme.NeonMagenta
-            "MAGENTA" -> com.example.ui.theme.CyberCyan
-            "GREEN" -> com.example.ui.theme.CyberCyan
-            "ORANGE" -> com.example.ui.theme.NeonMagenta
-            else -> com.example.ui.theme.TokyoPink
+    val themeSecondary: StateFlow<Color> = combine(_cyberAccentColor, _themeSecondaryOverride) { color, override ->
+        if (override != null && color == "DYNAMIC") {
+            override
+        } else {
+            when (color) {
+                "NEON TOKYO" -> com.example.ui.theme.TokyoPink
+                "DATA GLITCH" -> Color(0xFF00AA22)
+                "ACID RAIN" -> Color(0xFF8800FF)
+                "CYAN" -> Color(0xFF00AAFF)
+                "MAGENTA" -> Color(0xFFFF0055)
+                "GREEN" -> Color(0xFF00FF00)
+                "ORANGE" -> Color(0xFFFFBB00)
+                else -> com.example.ui.theme.TokyoPink
+            }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.ui.theme.TokyoPink)
+
+    fun updateThemeOverrides(primary: Color?, secondary: Color?) {
+        _themePrimaryOverride.value = primary
+        _themeSecondaryOverride.value = secondary
+    }
 
     init {
         // Asynchronously initialize SurrealDB database schema upon application launch to ensure integrity
@@ -431,6 +450,18 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         _equalizerPreset.value = pb.equalizerPreset
         _spatialAudio.value = pb.spatialAudio
         _hapticIntensity.value = pb.hapticIntensity
+        _quicEnabled.value = pb.quicEnabled
+
+        val dl = settingsManager.loadDownloadSettings()
+        _autoDownloadOnWifi.value = dl.autoDownloadOnWifi
+        _downloadMinQualityBitrate.value = dl.minQualityBitrate
+
+        val vis = settingsManager.loadVisualSettings()
+        _cyberAccentColor.value = vis.cyberAccentColor
+        _visualizerStyle.value = vis.visualizerStyle
+
+        val rt = settingsManager.loadRoutingSettings()
+        _isDownloadToggleActive.value = rt.isDownloadToggleActive
 
         // Restore volume and track from session
         val savedVolume = sessionPrefs.getFloat("volume", 0.8f)
@@ -540,7 +571,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         currentRecent.removeAll { it.id == track.id }
         currentRecent.add(0, track)
         if (currentRecent.size > 10) {
-            currentRecent.removeLast()
+            currentRecent.removeAt(currentRecent.lastIndex)
         }
         _recentlyPlayed.value = currentRecent
 
@@ -556,13 +587,20 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     delay(stepDuration)
                 }
                 
+                val actualUri = if (track.filePath.startsWith("http") || java.io.File(track.filePath).exists()) {
+                    track.filePath
+                } else {
+                    // Try resolving the stream via MediaApiManager using the track ID
+                    com.example.network.MediaApiManager.getStreamUrl(track.id) ?: track.filePath
+                }
+
                 _currentTrack.value = track
                 val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
                     .setTitle(track.title)
                     .setArtist(track.artist)
                     .build()
                 val mediaItem = androidx.media3.common.MediaItem.Builder()
-                    .setUri(track.filePath)
+                    .setUri(actualUri)
                     .setMediaId(track.id)
                     .setMediaMetadata(mediaMetadata)
                     .build()
@@ -578,21 +616,28 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 player.volume = _volume.value
             }
         } else {
-            _currentTrack.value = track
-            _isPlaying.value = true
-            val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
-                .setTitle(track.title)
-                .setArtist(track.artist)
-                .build()
-            val mediaItem = androidx.media3.common.MediaItem.Builder()
-                .setUri(track.filePath)
-                .setMediaId(track.id)
-                .setMediaMetadata(mediaMetadata)
-                .build()
-            player.setMediaItem(mediaItem)
-            player.prepare()
-            player.play()
-            player.volume = _volume.value
+            viewModelScope.launch {
+                val actualUri = if (track.filePath.startsWith("http") || java.io.File(track.filePath).exists()) {
+                    track.filePath
+                } else {
+                    com.example.network.MediaApiManager.getStreamUrl(track.id) ?: track.filePath
+                }
+                _currentTrack.value = track
+                _isPlaying.value = true
+                val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
+                    .setTitle(track.title)
+                    .setArtist(track.artist)
+                    .build()
+                val mediaItem = androidx.media3.common.MediaItem.Builder()
+                    .setUri(actualUri)
+                    .setMediaId(track.id)
+                    .setMediaMetadata(mediaMetadata)
+                    .build()
+                player.setMediaItem(mediaItem)
+                player.prepare()
+                player.play()
+                player.volume = _volume.value
+            }
         }
     }
     
@@ -761,17 +806,43 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             crossfadeDuration = _crossfadeDuration.value,
             equalizerPreset = _equalizerPreset.value,
             spatialAudio = _spatialAudio.value,
-            hapticIntensity = _hapticIntensity.value
+            hapticIntensity = _hapticIntensity.value,
+            quicEnabled = _quicEnabled.value
         )
         settingsManager.savePlaybackSettings(pb)
     }
 
+    private fun saveDownloadSettings() {
+        val dl = com.example.core.DownloadSettings(
+            autoDownloadOnWifi = _autoDownloadOnWifi.value,
+            minQualityBitrate = _downloadMinQualityBitrate.value
+        )
+        settingsManager.saveDownloadSettings(dl)
+    }
+
+    private fun saveVisualSettings() {
+        val vis = com.example.core.VisualSettings(
+            cyberAccentColor = _cyberAccentColor.value,
+            visualizerStyle = _visualizerStyle.value
+        )
+        settingsManager.saveVisualSettings(vis)
+    }
+
+    private fun saveRoutingSettings() {
+        val rt = com.example.core.RoutingSettings(
+            isDownloadToggleActive = _isDownloadToggleActive.value
+        )
+        settingsManager.saveRoutingSettings(rt)
+    }
+
     fun setCyberAccentColor(color: String) {
         _cyberAccentColor.value = color
+        saveVisualSettings()
     }
 
     fun setVisualizerStyle(style: String) {
         _visualizerStyle.value = style
+        saveVisualSettings()
     }
 
     fun setVolume(vol: Float) {

@@ -1,10 +1,10 @@
-# Crysta (mscraper)
+# M-scraper (mscraper)
 
 A multi‑platform cyberpunk-themed music player and download manager for Android and Linux built on a high-performance Rust core.
 
 ## Overview
 
-**Crysta** (developed as `mscraper`) integrates a high‑performance Rust download engine (`mm-dlp`) with a modern Kotlin/Compose Android front‑end. Featuring a unique cyberpunk aesthetic with glassmorphism effects and real-time visualizers, it provides a premium experience for managing and enjoying your music library.
+**M-scraper** (developed as `mscraper`) integrates a high‑performance Rust download engine (`mm-dlp`) with a modern Kotlin/Compose Android front‑end. Featuring a unique cyberpunk aesthetic with glassmorphism effects and real-time visualizers, it provides a premium experience for managing and enjoying your music library.
 
 - **High-Performance Rust Core** – Leverages Rust's async runtime and zero‑copy buffers for fast, reliable data processing.
 - **Cyberpunk UI** – Beautifully crafted glassmorphism interface with neon accents, CRT scanline effects, and dynamic audio visualizers.
@@ -16,7 +16,7 @@ A multi‑platform cyberpunk-themed music player and download manager for Androi
 
 ```
 mscraper/
-├─ app/                     # Android application module (Crysta UI)
+├─ app/                     # Android application module (M-scraper UI)
 │   ├─ src/main/java/com/example/ui/      # Compose UI, Themes, and Components
 │   ├─ src/main/java/com/example/core/    # Native bridge and Logic
 │   └─ src/main/res/xml/                  # Backup and Data rules
@@ -76,4 +76,4 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 **Educational Use Only.** The authors are not responsible for any misuse of this tool. Users must comply with all applicable laws and terms of service. See [DISCLAIMER.md](DISCLAIMER.md) for details.
 
 ---
-*Developed with ❤️ by the Crysta Project Contributors.*
+*Developed with ❤️ by the M-scraper Project Contributors.*

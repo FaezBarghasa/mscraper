@@ -7,6 +7,10 @@ import androidx.room.RoomDatabase
 import com.example.model.FavoriteTrack
 import com.example.model.TrackEntity
 import com.example.model.PlaylistEntity
+import com.example.db.FavoriteTrackDao
+import com.example.db.TrackDao
+import com.example.db.PlaylistDao
+import com.example.db.PlaylistTrackDao
 import com.example.model.PlaylistTrackEntity
 
 @Database(

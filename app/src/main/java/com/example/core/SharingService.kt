@@ -12,7 +12,7 @@ class SharingService(private val context: Context) {
         val sendIntent = Intent().apply {
             action = Intent.ACTION_SEND
             putExtra(Intent.EXTRA_SUBJECT, "Sharing track: ${track.title} - ${track.artist}")
-            putExtra(Intent.EXTRA_TEXT, "Stream this track on Crysta: ${track.title} by ${track.artist} - Location: ${track.filePath}")
+            putExtra(Intent.EXTRA_TEXT, "Stream this track on M-scraper: ${track.title} by ${track.artist} - Location: ${track.filePath}")
             type = "audio/*"
         }
         val shareIntent = Intent.createChooser(sendIntent, "CRYSTA SIGNALS TRANSMISSION").apply {

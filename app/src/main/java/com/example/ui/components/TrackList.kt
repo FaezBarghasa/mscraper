@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.model.Track
 import com.example.ui.theme.CyberCyan
@@ -173,8 +174,26 @@ fun TrackListItem(
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(track.title, style = MaterialTheme.typography.titleMedium, color = Color.White)
-                        Text(track.artist, style = MaterialTheme.typography.labelSmall, color = CyberCyan)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(track.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1)
+                            if (track.genre.isNotBlank()) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(CyberCyan.copy(alpha = 0.2f))
+                                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = track.genre.uppercase(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = CyberCyan,
+                                        fontSize = 8.sp
+                                    )
+                                }
+                            }
+                        }
+                        Text(track.artist, style = MaterialTheme.typography.labelSmall, color = CyberCyan, maxLines = 1)
                     }
                     Text(track.duration, style = MaterialTheme.typography.labelSmall, color = TextGray)
                     Spacer(modifier = Modifier.width(8.dp))

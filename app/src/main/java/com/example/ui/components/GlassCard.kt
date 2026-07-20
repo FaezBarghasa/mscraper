@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -19,7 +18,6 @@ fun GlassCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(20.dp),
     accentColor: Color = Color(0xFF00E5FF),
-    blurRadius: androidx.compose.ui.unit.Dp = 20.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
@@ -43,8 +41,7 @@ fun GlassCard(
                     )
                 ),
                 shape
-            )
-            .blur(blurRadius),
+            ),
         content = content
     )
 }
