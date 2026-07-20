@@ -38,6 +38,7 @@ mscraper/
 
 1. Build the Rust core for Android:
    ```bash
+   git clone https://github.com/FaezBarghasa/mm-dlp
    cd mm-dlp
    cargo build --release --target aarch64-linux-android
    cp target/aarch64-linux-android/release/libmm_dlp_core.so ../app/src/main/jniLibs/arm64-v8a/
