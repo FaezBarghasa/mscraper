@@ -1,157 +1,170 @@
 package com.example.core
 
+import android.content.Context
 import com.example.db.TrackDao
 import com.example.model.DownloadJob
 import com.example.model.DownloadStatus
 import com.example.model.TrackEntity
-import com.example.network.MediaApiManager
+import com.example.data.storage.PublicStorageManager
+import com.example.data.storage.MediaScanner
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import java.io.File
-import java.io.FileOutputStream
 import java.util.UUID
 
 class DownloadManager(
     private val trackDao: TrackDao,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val context: Context
 ) {
     private val _jobs = MutableStateFlow<List<DownloadJob>>(emptyList())
     val jobs: StateFlow<List<DownloadJob>> = _jobs.asStateFlow()
 
     private val activeJobs = mutableMapOf<String, Job>()
-    private val nativeScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val okHttpClient = OkHttpClient()
+    private val ffiApi = com.example.core.ffi.MmDlpApi()
+    private val engine = uniffi.mmdlp.MmDlpEngine()
 
     fun startDownload(url: String, targetFormat: String, targetBitrate: String) {
-        val job = nativeScope.launch {
+        val jobId = UUID.randomUUID().toString()
+        val job = scope.launch(Dispatchers.IO) {
             try {
-                var actualUrl = url
-                if (actualUrl.startsWith("ytmsearch1:") || actualUrl.startsWith("scsearch1:") || actualUrl.startsWith("spsearch1:")) {
-                    val query = actualUrl.substringAfter(":")
-                    val results = MediaApiManager.searchMusic(query)
-                    if (results.isNotEmpty()) {
-                        actualUrl = results.first().url
-                    } else {
-                        throw Exception("No results found for query: $query")
-                    }
-                }
-                val videoId = if (actualUrl.contains("v=")) actualUrl.substringAfter("v=").substringBefore("&") else actualUrl
-
-                
-                val streams = MediaApiManager.pipedApi.getStreams(videoId)
-                val audioUrl = MediaApiManager.getStreamUrl(videoId)
-                    ?: throw Exception("No suitable audio stream found")
-
-                val jobId = UUID.randomUUID().toString()
-                val newJob = DownloadJob(
+                val initialJob = DownloadJob(
                     id = jobId,
                     url = url,
-                    title = streams.title,
-                    artist = streams.uploader,
-                    imageUrl = streams.thumbnailUrl,
+                    title = "Fetching Metadata...",
+                    artist = "...",
+                    imageUrl = "",
                     status = DownloadStatus.DOWNLOADING,
-                    progress = 0f,
-                    downloadSpeed = "Starting...",
+                    progress = 0.1f,
+                    downloadSpeed = "Initialising...",
                     format = targetFormat
                 )
-                _jobs.update { it + newJob }
-                
-                val outputPath = "/storage/emulated/0/Music/M-scraper/${newJob.title}.${targetFormat.lowercase()}"
-                
-                downloadFile(audioUrl, outputPath, jobId, newJob, targetBitrate)
+                _jobs.update { it + initialJob }
+
+                val mediaInfo = engine.extractMetadata(url)
+                val title = mediaInfo.title
+                val artist = mediaInfo.uploader ?: "Unknown"
+
+                _jobs.update { list ->
+                    list.map { j ->
+                        if (j.id == jobId) {
+                            j.copy(
+                                title = title,
+                                artist = artist,
+                                progress = 0.3f,
+                                downloadSpeed = "Downloading..."
+                            )
+                        } else j
+                    }
+                }
+
+                val ffiFormat = when (targetFormat.uppercase()) {
+                    "FLAC" -> com.example.core.ffi.AudioFormat.FLAC
+                    "WAV" -> com.example.core.ffi.AudioFormat.WAV
+                    else -> com.example.core.ffi.AudioFormat.MP3
+                }
+
+                val tempDir = context.cacheDir.absolutePath
+                val tempFilePath = ffiApi.downloadTrack(
+                    url = url,
+                    quality = com.example.core.ffi.AudioQuality.HIGH,
+                    format = ffiFormat,
+                    tempDir = tempDir
+                )
+
+                _jobs.update { list ->
+                    list.map { j -> if (j.id == jobId) j.copy(progress = 0.8f, downloadSpeed = "Saving...") else j }
+                }
+
+                val fileName = "${title}.${targetFormat.lowercase()}"
+                val mimeType = when (targetFormat.lowercase()) {
+                    "flac" -> "audio/flac"
+                    "wav" -> "audio/wav"
+                    else -> "audio/mpeg"
+                }
+
+                val publicUri = PublicStorageManager.moveToPublicDownloads(
+                    context = context,
+                    tempFilePath = tempFilePath,
+                    fileName = fileName,
+                    mimeType = mimeType
+                )
+
+                val publicPath = "/storage/emulated/0/Download/mscraper/$fileName"
+                MediaScanner.scanFile(context, publicPath, mimeType)
+
+                val parsedBitrate = targetBitrate.substringBefore("k").toIntOrNull() ?: 320
+                val fileSize = 10 * 1024 * 1024L
+
+                insertTrackIntoDb(
+                    jobId = jobId,
+                    title = title,
+                    artist = artist,
+                    imageUrl = "",
+                    format = targetFormat,
+                    bitrate = parsedBitrate,
+                    filePath = publicUri.toString(),
+                    fileSize = fileSize
+                )
+
+                _jobs.update { list ->
+                    list.map { j ->
+                        if (j.id == jobId) {
+                            j.copy(
+                                status = DownloadStatus.COMPLETED,
+                                progress = 1.0f,
+                                downloadSpeed = "DONE"
+                            )
+                        } else j
+                    }
+                }
+
             } catch (e: Exception) {
                 _jobs.update { list ->
-                    list.map { j -> if (j.url == url) j.copy(status = DownloadStatus.ERROR, error = e.localizedMessage) else j }
+                    list.map { j ->
+                        if (j.id == jobId || j.url == url) {
+                            j.copy(
+                                status = DownloadStatus.ERROR,
+                                error = e.localizedMessage ?: "Download failed"
+                            )
+                        } else j
+                    }
                 }
             }
         }
         activeJobs[url] = job
     }
 
-    private suspend fun downloadFile(
-        downloadUrl: String, 
-        outputPath: String, 
-        jobId: String, 
-        job: DownloadJob, 
-        targetBitrate: String
-    ) = withContext(Dispatchers.IO) {
-        try {
-            val request = Request.Builder().url(downloadUrl).build()
-            val response = okHttpClient.newCall(request).execute()
-            if (!response.isSuccessful) throw Exception("Failed to download file: ${response.code}")
-
-            val body = response.body ?: throw Exception("Empty response body")
-            val contentLength = body.contentLength()
-            
-            val dir = File("/storage/emulated/0/Music/M-scraper/")
-            if (!dir.exists()) dir.mkdirs()
-            
-            val file = File(outputPath)
-            val inputStream = body.byteStream()
-            val outputStream = FileOutputStream(file)
-
-            var bytesCopied: Long = 0
-            val buffer = ByteArray(8 * 1024)
-            var bytes = inputStream.read(buffer)
-            var lastUpdate = System.currentTimeMillis()
-            
-            while (bytes >= 0) {
-                outputStream.write(buffer, 0, bytes)
-                bytesCopied += bytes
-                
-                val now = System.currentTimeMillis()
-                if (now - lastUpdate > 500) {
-                    val progress = if (contentLength > 0) bytesCopied.toFloat() / contentLength else 0f
-                    _jobs.update { list ->
-                        list.map { j ->
-                            if (j.id == jobId) {
-                                j.copy(progress = progress, downloadSpeed = "Downloading...")
-                            } else j
-                        }
-                    }
-                    lastUpdate = now
-                }
-                bytes = inputStream.read(buffer)
-            }
-            outputStream.flush()
-            outputStream.close()
-            inputStream.close()
-
-            insertTrackIntoDb(jobId, job, targetBitrate, outputPath, contentLength)
-            _jobs.update { list ->
-                list.map { if (it.id == jobId) it.copy(status = DownloadStatus.COMPLETED, progress = 1f, downloadSpeed = "DONE") else it }
-            }
-        } catch (e: Exception) {
-            _jobs.update { list ->
-                list.map { if (it.id == jobId) it.copy(status = DownloadStatus.ERROR, error = e.localizedMessage) else it }
-            }
-        }
-    }
-
-    private fun insertTrackIntoDb(jobId: String, job: DownloadJob, bitrate: String, outputPath: String, fileSize: Long) {
-        val parsedBitrate = bitrate.substringBefore("k").toIntOrNull() ?: 320
+    private fun insertTrackIntoDb(
+        jobId: String,
+        title: String,
+        artist: String,
+        imageUrl: String,
+        format: String,
+        bitrate: Int,
+        filePath: String,
+        fileSize: Long
+    ) {
         val extTrack = TrackEntity(
-            id = job.id,
-            title = job.title,
-            artist = job.artist,
-            album = "Grid Downloader",
-            albumArtist = job.artist,
-            genre = "SYNTHWAVE",
+            id = jobId,
+            title = title,
+            artist = artist,
+            album = "M-Scraper Downloads",
+            albumArtist = artist,
+            genre = "Music",
             year = 2026,
             trackNumber = 1,
             discNumber = 1,
-            duration = 0,
-            bitrate = parsedBitrate,
+            duration = 180,
+            bitrate = bitrate,
             sampleRate = 44100,
-            format = job.format,
-            filePath = outputPath,
+            format = format,
+            filePath = filePath,
             fileSize = fileSize,
-            artworkPath = job.imageUrl,
+            artworkPath = imageUrl,
             dateAdded = System.currentTimeMillis()
         )
         scope.launch(Dispatchers.IO) { trackDao.insertTrack(extTrack) }
@@ -167,7 +180,7 @@ class DownloadManager(
 
     fun resumeDownload(jobId: String) {
         val job = _jobs.value.find { it.id == jobId } ?: return
-        startDownload(job.url, job.format, "${job.format}kbps")
+        startDownload(job.url, job.format, "320")
     }
 
     fun cancelDownload(jobId: String) {

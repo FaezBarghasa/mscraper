@@ -35,7 +35,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     // Engines & Services (Phases 1, 2, 4, 5, 6)
     val surrealDbService = com.example.core.SurrealDbService(application)
-    val downloadManager = com.example.core.DownloadManager(trackDao, viewModelScope)
+    val downloadManager = com.example.core.DownloadManager(trackDao, viewModelScope, application)
     val libraryScanner = com.example.core.LibraryScanner(trackDao, surrealDbService)
     val duplicateManager = com.example.core.DuplicateManager(trackDao)
     val sharingService = com.example.core.SharingService(application)

@@ -1,58 +1,100 @@
 package com.example.core
 
 import com.example.model.SearchSource
+import com.example.model.Track
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 interface MmDlpApi {
     suspend fun search(query: String, source: SearchSource): List<Track>
-    suspend fun exportPlaylistJson(playlistName: String, tracks: List<com.example.model.Track>): String
-    suspend fun exportPlaylistXml(playlistName: String, tracks: List<com.example.model.Track>): String
-    suspend fun importPlaylistJson(json: String): Pair<String, List<com.example.model.Track>>
+    suspend fun exportPlaylistJson(playlistName: String, tracks: List<Track>): String
+    suspend fun exportPlaylistXml(playlistName: String, tracks: List<Track>): String
+    suspend fun importPlaylistJson(json: String): Pair<String, List<Track>>
     fun setNetworkConfig(enableQuic: Boolean)
 }
 
 class MmDlpApiImpl : MmDlpApi {
-    private val ytMusicScraper = YtMusicScraper()
+    private val ffiApi = com.example.core.ffi.MmDlpApi()
 
     override suspend fun search(query: String, source: SearchSource): List<Track> = withContext(Dispatchers.IO) {
-        return@withContext when (source) {
-            SearchSource.YOUTUBE -> ytMusicScraper.searchTracks(query)
-            SearchSource.SOUNDCLOUD -> emptyList()
-            SearchSource.SPOTIFY -> emptyList()
+        val ffiSource = when (source) {
+            SearchSource.YOUTUBE -> com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC
+            SearchSource.SOUNDCLOUD -> com.example.core.ffi.AudioSource.SOUND_CLOUD
+            SearchSource.SPOTIFY -> com.example.core.ffi.AudioSource.SPOTIFY
+        }
+        val results = ffiApi.search(query, ffiSource)
+        results.map { ffiTrack ->
+            Track(
+                id = ffiTrack.trackId,
+                title = ffiTrack.title,
+                artist = ffiTrack.artist,
+                duration = "3:00",
+                imageUrl = ffiTrack.albumArtUrl ?: "",
+                filePath = "",
+                genre = source.displayName
+            )
         }
     }
 
-    override suspend fun exportPlaylistJson(playlistName: String, tracks: List<com.example.model.Track>): String {
-        // Logic for exporting to JSON (usually handled by Rust core, but here's a placeholder)
-        val sb = StringBuilder()
-        sb.append("{\"name\": \"$playlistName\", \"tracks\": [")
-        tracks.forEachIndexed { index, track ->
-            sb.append("{\"id\": \"${track.id}\", \"title\": \"${track.title}\", \"artist\": \"${track.artist}\"}")
-            if (index < tracks.size - 1) sb.append(",")
+    override suspend fun exportPlaylistJson(playlistName: String, tracks: List<Track>): String = withContext(Dispatchers.IO) {
+        val ffiTracks = tracks.map { track ->
+            com.example.core.ffi.Track(
+                id = track.id,
+                title = track.title,
+                artist = track.artist,
+                album = null,
+                sourceUrl = "",
+                duration = 180uL
+            )
         }
-        sb.append("]}")
-        return sb.toString()
+        val ffiPlaylist = com.example.core.ffi.Playlist(
+            id = java.util.UUID.randomUUID().toString(),
+            name = playlistName,
+            description = null,
+            tracks = ffiTracks,
+            source = com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC
+        )
+        ffiApi.exportPlaylistJson(ffiPlaylist)
     }
 
-    override suspend fun exportPlaylistXml(playlistName: String, tracks: List<com.example.model.Track>): String {
-        val sb = StringBuilder()
-        sb.append("<playlist name=\"$playlistName\">")
-        tracks.forEach { track ->
-            sb.append("<track id=\"${track.id}\" title=\"${track.title}\" artist=\"${track.artist}\" />")
+    override suspend fun exportPlaylistXml(playlistName: String, tracks: List<Track>): String = withContext(Dispatchers.IO) {
+        val ffiTracks = tracks.map { track ->
+            com.example.core.ffi.Track(
+                id = track.id,
+                title = track.title,
+                artist = track.artist,
+                album = null,
+                sourceUrl = "",
+                duration = 180uL
+            )
         }
-        sb.append("</playlist>")
-        return sb.toString()
+        val ffiPlaylist = com.example.core.ffi.Playlist(
+            id = java.util.UUID.randomUUID().toString(),
+            name = playlistName,
+            description = null,
+            tracks = ffiTracks,
+            source = com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC
+        )
+        ffiApi.exportPlaylistXml(ffiPlaylist)
     }
 
-    override suspend fun importPlaylistJson(json: String): Pair<String, List<com.example.model.Track>> {
-        // Mocking the result of import
-        return "Imported Playlist" to emptyList()
+    override suspend fun importPlaylistJson(json: String): Pair<String, List<Track>> = withContext(Dispatchers.IO) {
+        val ffiPlaylist = ffiApi.importPlaylistJson(json)
+        val tracks = ffiPlaylist.tracks.map { ffiTrack ->
+            Track(
+                id = ffiTrack.id,
+                title = ffiTrack.title,
+                artist = ffiTrack.artist,
+                duration = "${ffiTrack.duration / 60uL}:${(ffiTrack.duration % 60uL).toString().padStart(2, '0')}",
+                imageUrl = "",
+                filePath = ffiTrack.sourceUrl,
+                genre = ffiPlaylist.source.name
+            )
+        }
+        ffiPlaylist.name to tracks
     }
 
     override fun setNetworkConfig(enableQuic: Boolean) {
-        // Pass configuration to Rust core
-        // In a real scenario, this might call a UniFFI method on MmDlpEngine or similar
-        android.util.Log.d("MmDlpApi", "Network config updated: enableQuic=$enableQuic")
+        ffiApi.setNetworkConfig(enableQuic)
     }
 }

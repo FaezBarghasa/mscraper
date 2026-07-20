@@ -1,5 +1,7 @@
 package com.example.ui.playlist
 
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -19,7 +21,8 @@ class PlaylistMenuTest {
                 playlistName = "Test",
                 tracks = emptyList(),
                 onImportSuccess = { _, _ -> },
-                accentColor = Color.Cyan
+                accentColor = Color.Cyan,
+                snackbarHostState = remember { SnackbarHostState() }
             )
         }
 

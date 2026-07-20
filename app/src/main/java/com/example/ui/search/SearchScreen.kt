@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.model.SearchSource
 import com.example.model.Track
 import com.example.ui.components.SourceSelector
 import com.example.ui.components.TrackList
@@ -48,17 +49,18 @@ fun SearchScreen(
         com.example.ui.downloads.FormatPickerDialog(
             onDismiss = { showFormatPicker = false; trackToDownload = null },
             onFormatSelected = { format ->
-                // In a real app, we'd need to extract the audio stream URL first
-                // For this implementation, we'll assume the search result coreTrack might have it 
-                // or we use a proxy URL for demonstration.
-                val coreTrack = searchResults.find { it.videoId == trackToDownload!!.id }
+                val coreTrack = searchResults.find { it.id == trackToDownload!!.id }
                 if (coreTrack != null) {
                     downloadViewModel.startDownload(
                         title = coreTrack.title,
-                        artist = coreTrack.artists.joinToString(", "),
-                        imageUrl = coreTrack.coverUrl,
-                        videoUrl = "https://www.youtube.com/watch?v=${coreTrack.videoId}",
-                        audioUrl = "", // Would be resolved via Rust core or MediaApiManager
+                        artist = coreTrack.artist,
+                        imageUrl = coreTrack.imageUrl,
+                        videoUrl = if (selectedSource == SearchSource.YOUTUBE) {
+                            "https://www.youtube.com/watch?v=${coreTrack.id}"
+                        } else {
+                            coreTrack.id
+                        },
+                        audioUrl = "",
                         format = format
                     )
                     showFormatPicker = false
@@ -126,16 +128,7 @@ fun SearchScreen(
                     CircularProgressIndicator(color = accentColor)
                 }
             } else {
-                val uiTracks = searchResults.map { coreTrack ->
-                    Track(
-                        id = coreTrack.videoId,
-                        title = coreTrack.title,
-                        artist = coreTrack.artists.joinToString(", "),
-                        duration = "${coreTrack.durationSeconds / 60}:${(coreTrack.durationSeconds % 60).toString().padStart(2, '0')}",
-                        imageUrl = coreTrack.coverUrl,
-                        genre = selectedSource.displayName
-                    )
-                }
+                val uiTracks = searchResults
 
                 TrackList(
                     tracks = uiTracks,
