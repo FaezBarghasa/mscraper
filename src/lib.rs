@@ -1,3 +1,10 @@
+pub mod data;
+pub mod domain;
+pub mod download;
+pub mod ffi;
+pub mod media;
+pub mod network;
+
 uniffi::setup_scaffolding!();
 
 pub mod scraper;
