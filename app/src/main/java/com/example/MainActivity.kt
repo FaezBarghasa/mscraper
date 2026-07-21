@@ -5,15 +5,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.rememberNavController
 import com.example.core.MmDlpApiImpl
-import com.example.data.settings.SettingsRepository
-import com.example.navigation.MainAppScreen
-import com.example.ui.components.CRTEffect
-import com.example.ui.theme.DeepVoid
-import com.example.ui.theme.MyApplicationTheme
+import com.example.data.settings.SettingsRepositoryImpl
+import com.example.ui.navigation.AppNavigation
+import com.example.ui.theme.MscraperTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import uniffi.mmdlp.MmDlpEngine
@@ -29,7 +28,7 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     
     // Initialize settings and network config
-    val settingsRepository = com.example.data.settings.SettingsRepositoryImpl(this)
+    val settingsRepository = SettingsRepositoryImpl(this)
     val api = MmDlpApiImpl()
     
     // Use runBlocking for initial setup before anything else starts
@@ -48,12 +47,10 @@ class MainActivity : ComponentActivity() {
     }
 
     setContent {
-      MyApplicationTheme {
-        Surface(modifier = Modifier.fillMaxSize(), color = DeepVoid) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                MainAppScreen()
-                CRTEffect()
-            }
+      MscraperTheme {
+        val navController = rememberNavController()
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            AppNavigation(navController = navController)
         }
       }
     }
