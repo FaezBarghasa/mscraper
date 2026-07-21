@@ -3,5 +3,8 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/mm-dlp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp/target/debug/build/boring-sys-72f318e5ccffc692/out/boringssl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp/target/debug/build/boring-sys-b03db00c8feff16a/out/boringssl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mm-dlp/target/debug/build/boring-sys-c2a8e98066f48895/out/boringssl" vcs="Git" />
   </component>
 </project>
