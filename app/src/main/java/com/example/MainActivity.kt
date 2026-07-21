@@ -10,7 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.example.core.MmDlpApiImpl
-import com.example.data.settings.SettingsRepositoryImpl
+import com.example.data.settings.SettingsRepository
 import com.example.ui.navigation.AppNavigation
 import com.example.ui.theme.MscraperTheme
 import kotlinx.coroutines.flow.first
@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     
     // Initialize settings and network config
-    val settingsRepository = SettingsRepositoryImpl(this)
+    val settingsRepository = SettingsRepository(this)
     val api = MmDlpApiImpl()
     
     // Use runBlocking for initial setup before anything else starts

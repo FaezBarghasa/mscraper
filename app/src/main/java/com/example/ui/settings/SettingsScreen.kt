@@ -21,7 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.compose.ui.platform.LocalContext
 import com.example.core.MmDlpApiImpl
-import com.example.data.settings.SettingsRepositoryImpl
+import com.example.data.settings.SettingsRepository
 import com.example.data.settings.ThemeMode
 import com.example.ui.theme.DeepVoid
 import com.example.viewmodel.MusicViewModel
@@ -37,7 +37,7 @@ fun SettingsScreen(
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                 return SettingsViewModel(
-                    repository = SettingsRepositoryImpl(context),
+                    repository = SettingsRepository(context),
                     api = MmDlpApiImpl()
                 ) as T
             }

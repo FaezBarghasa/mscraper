@@ -41,6 +41,7 @@ secretsGradlePlugin = "2.0.1"
 googleServices = "4.5.0"
 surrealdb = "2.1.2"
 workManager = "2.11.2"
+palette = "1.0.0"
 
 media3 = "1.4.0"
 playServicesCronet = "18.1.0"
@@ -100,6 +101,7 @@ firebase-ai = { group = "com.google.firebase", name = "firebase-ai" }
 firebase-appcheck-recaptcha = { group = "com.google.firebase", name = "firebase-appcheck-recaptcha" }
 surrealdb = { group = "com.surrealdb", name = "surrealdb", version.ref = "surrealdb" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
+androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "palette" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

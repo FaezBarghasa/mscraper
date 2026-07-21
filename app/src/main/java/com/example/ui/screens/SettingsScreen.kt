@@ -6,12 +6,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.data.settings.SettingsRepositoryImpl
+import com.example.data.settings.SettingsRepository
 
 @Composable
 fun SettingsScreen() {
     val context = LocalContext.current
-    val repository = remember { SettingsRepositoryImpl(context) }
+    val repository = remember { SettingsRepository(context) }
     val enableQuic by repository.enableQuic.collectAsState(initial = true)
     val scope = rememberCoroutineScope()
 
