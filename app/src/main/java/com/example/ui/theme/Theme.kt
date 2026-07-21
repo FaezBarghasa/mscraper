@@ -1,35 +1,31 @@
 package com.example.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
-private val CyberpunkColorScheme =
-  darkColorScheme(
-    primary = CyberCyan,
-    onPrimary = Color.Black,
+private val DarkColorScheme = darkColorScheme(
+    primary = NeonCyan,
     secondary = NeonMagenta,
-    onSecondary = Color.White,
-    tertiary = PrimaryGreen,
-    background = DeepVoid,
-    onBackground = Color.White,
-    surface = SurfaceDark,
-    onSurface = Color.White,
-    surfaceVariant = HoloBg,
-    onSurfaceVariant = TextGray,
-  )
+    tertiary = NeonGreen,
+    background = CyberDark,
+    surface = CyberGray,
+    onPrimary = CyberDark,
+    onSecondary = CyberDark,
+    onTertiary = CyberDark,
+    onBackground = NeonCyan,
+    onSurface = NeonCyan
+)
 
 @Composable
-fun MyApplicationTheme(
-  darkTheme: Boolean = true, // Always dark theme for this aesthetic
-  dynamicColor: Boolean = false, // Disable dynamic color to enforce aesthetic
-  content: @Composable () -> Unit,
+fun MscraperTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
 ) {
-  val colorScheme = CyberpunkColorScheme
-
-  MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
+    MaterialTheme(
+        colorScheme = DarkColorScheme,
+        typography = Typography,
+        content = content
+    )
 }
