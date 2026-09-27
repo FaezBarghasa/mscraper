@@ -37,6 +37,7 @@ import com.example.ui.theme.*
 import com.example.viewmodel.MusicViewModel
 import com.example.ui.components.TrackList
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun SearchScreen(
     navController: NavController,
@@ -311,6 +312,7 @@ fun FrequencyCard(title: String, color: Color, imageUrl: String, modifier: Modif
 
 data class Signal(val id: String, val artist: String, val album: String, val imageUrl: String, val duration: String)
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun RecentSignals(viewModel: MusicViewModel, navController: NavController, accentColor: Color, secColor: Color) {
     val signals = listOf(

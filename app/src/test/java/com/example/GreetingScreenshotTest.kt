@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.example
 
 import androidx.compose.ui.test.junit4.createComposeRule

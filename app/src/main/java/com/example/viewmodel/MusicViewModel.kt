@@ -1,3 +1,5 @@
+@file:Suppress("unused", "UnusedProperty")
+
 package com.example.viewmodel
 
 import android.app.Application
@@ -9,9 +11,6 @@ import com.example.model.FavoriteTrack
 import com.example.model.Track
 import com.example.model.TrackEntity
 import com.example.model.PlaylistEntity
-import com.example.ui.theme.CyberCyan
-import com.example.ui.theme.NeonMagenta
-import com.example.ui.theme.PrimaryGreen
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -26,6 +25,7 @@ import org.chromium.net.CronetEngine
 enum class QueuePosition { NOW, NEXT, END }
 enum class RepeatMode { NONE, ALL, ONE }
 
+@androidx.media3.common.util.UnstableApi
 class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getDatabase(application)
     private val favoriteDao = db.favoriteTrackDao()
@@ -54,7 +54,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _generatedPlaylistTracks = MutableStateFlow<List<Track>>(emptyList())
     val generatedPlaylistTracks: StateFlow<List<Track>> = _generatedPlaylistTracks.asStateFlow()
 
-    fun generatePlaylistWithAI(mood: String) {
+    fun generatePlaylistWithAI(@Suppress("UNUSED_PARAMETER") mood: String) {
         // AI Playlist Generation disabled for now
         /*
         viewModelScope.launch {
@@ -134,7 +134,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 id = entity.id,
                 title = entity.title,
                 artist = entity.artist ?: "Unknown Artist",
-                duration = String.format("%d:%02d", entity.duration / 60, entity.duration % 60),
+                duration = String.format(java.util.Locale.US, "%d:%02d", entity.duration / 60, entity.duration % 60),
                 imageUrl = entity.artworkPath ?: "",
                 filePath = entity.filePath,
                 genre = entity.genre ?: "Unknown"
@@ -150,7 +150,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         _searchQuery.value = query
     }
 
-    val searchResults: StateFlow<List<Track>> = kotlinx.coroutines.flow.combine(synchronizedLibrary, _searchQuery) { lib, query ->
+    val searchResults: StateFlow<List<Track>> = combine(synchronizedLibrary, _searchQuery) { lib, query ->
         if (query.isBlank()) emptyList()
         else lib.filter { 
             it.title.contains(query, ignoreCase = true) || 
@@ -163,9 +163,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     val playbackProgress: StateFlow<Float> = _playbackProgress.asStateFlow()
 
     fun importFolder(uri: android.net.Uri) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             val app = getApplication<Application>()
-            val contentResolver = app.contentResolver
             val documentFile = androidx.documentfile.provider.DocumentFile.fromTreeUri(app, uri)
             
             documentFile?.listFiles()?.forEach { file ->
@@ -183,8 +182,6 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         val artist = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST) ?: "Unknown Artist"
                         val durationStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
                         val durationMs = durationStr?.toLongOrNull() ?: 0L
-                        val durationFormatted = String.format("%d:%02d", java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(durationMs), 
-                            java.util.concurrent.TimeUnit.MILLISECONDS.toSeconds(durationMs) - java.util.concurrent.TimeUnit.MINUTES.toSeconds(java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(durationMs)))
                         
                         val trackEntity = TrackEntity(
                             id = "imported_${java.util.UUID.randomUUID()}",
@@ -656,7 +653,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         if (current != null && q.isNotEmpty()) {
             val currentIndex = q.indexOfFirst { it.id == current.id }
             val nextIndex = if (_shuffleEnabled.value) {
-                (0 until q.size).filter { it != currentIndex }.randomOrNull() ?: 0
+                q.indices.filter { it != currentIndex }.randomOrNull() ?: 0
             } else {
                 (currentIndex + 1) % q.size
             }
@@ -847,9 +844,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setVolume(vol: Float) {
         _volume.value = vol.coerceIn(0f, 1f)
-        if (player != null) {
-            player.volume = _volume.value
-        }
+        player.volume = _volume.value
         saveSession()
     }
 
@@ -913,7 +908,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             id = entity.id,
                             title = entity.title,
                             artist = entity.artist ?: "Unknown Artist",
-                            duration = String.format("%d:%02d", entity.duration / 60, entity.duration % 60),
+                            duration = String.format(java.util.Locale.US, "%d:%02d", entity.duration / 60, entity.duration % 60),
                             imageUrl = entity.artworkPath ?: "",
                             filePath = entity.filePath
                         )

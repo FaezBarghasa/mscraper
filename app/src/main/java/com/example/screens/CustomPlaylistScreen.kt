@@ -30,6 +30,7 @@ import com.example.ui.theme.HoloBorder
 import com.example.ui.theme.TextGray
 import com.example.viewmodel.MusicViewModel
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun CustomPlaylistScreen(
     navController: NavController,
@@ -206,6 +207,7 @@ fun CustomPlaylistScreen(
     }
 }
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun SidebarContent(
     viewModel: MusicViewModel,

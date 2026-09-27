@@ -50,6 +50,7 @@ import kotlinx.coroutines.withContext
 
 enum class DisplayMode { RECORD, LYRICS, VISUALIZER }
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun NowPlayingScreen(navController: NavController, viewModel: MusicViewModel) {
     val currentTrack by viewModel.currentTrack.collectAsState()
@@ -532,6 +533,7 @@ fun SongInfo(track: Track, accentColor: Color) {
     }
 }
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun ActionButtons(track: Track, favTracks: List<com.example.model.FavoriteTrack>, viewModel: MusicViewModel, accentColor: Color) {
     val isLiked = favTracks.any { it.id == track.id }

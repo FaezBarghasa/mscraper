@@ -24,6 +24,7 @@ import com.example.viewmodel.MusicViewModel
 import com.example.viewmodel.QueuePosition
 import kotlinx.coroutines.flow.collectLatest
 
+@androidx.media3.common.util.UnstableApi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(

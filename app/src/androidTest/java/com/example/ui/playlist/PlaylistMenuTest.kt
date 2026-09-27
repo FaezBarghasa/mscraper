@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.ui.playlist
 
 import androidx.compose.material3.SnackbarHostState

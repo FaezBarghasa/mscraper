@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.ui.settings
 
 import androidx.compose.ui.test.*

@@ -25,6 +25,7 @@ import com.example.ui.components.MiniPlayer
 import com.example.viewmodel.MusicViewModel
 import kotlinx.coroutines.launch
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun MainAppScreen() {
     val navController = rememberNavController()
@@ -43,7 +44,7 @@ fun MainAppScreen() {
             ModalDrawerSheet(
                 drawerContainerColor = Color(0xFF070707),
                 drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp),
-                modifier = Modifier.width(300.dp)
+                modifier = Modifier.width(300.dp),
             ) {
                 SidebarContent(
                     viewModel = viewModel,

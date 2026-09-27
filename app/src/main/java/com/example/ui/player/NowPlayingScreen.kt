@@ -21,9 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.ui.theme.DeepVoid
-import com.example.ui.theme.TokyoBlue
 import com.example.viewmodel.MusicViewModel
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun NowPlayingScreen(
     onBack: () -> Unit,

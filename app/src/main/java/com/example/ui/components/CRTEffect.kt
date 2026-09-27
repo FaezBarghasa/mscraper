@@ -11,6 +11,7 @@ import com.example.viewmodel.MusicViewModel
 import androidx.compose.animation.core.*
 import kotlin.random.Random
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun CRTEffect(modifier: Modifier = Modifier, viewModel: MusicViewModel = viewModel()) {
     val isPlaying by viewModel.isPlaying.collectAsState()

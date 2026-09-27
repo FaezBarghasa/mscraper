@@ -1,6 +1,5 @@
 package com.example.ui.downloads
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,6 +23,7 @@ import com.example.model.DownloadStatus
 import com.example.ui.theme.DeepVoid
 import com.example.viewmodel.MusicViewModel
 
+@androidx.media3.common.util.UnstableApi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadsScreen(

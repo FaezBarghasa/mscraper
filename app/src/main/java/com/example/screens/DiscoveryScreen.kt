@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.foundation.lazy.itemsIndexed
 import com.example.ui.components.TrackList
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun DiscoveryScreen(
     navController: NavController,
@@ -470,6 +471,7 @@ fun TopBar(accentColor: Color, onMenuClick: () -> Unit) {
     }
 }
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun FeaturedSection(navController: NavController, viewModel: MusicViewModel, accentColor: Color) {
     val featuredTrack = Track(
@@ -558,6 +560,7 @@ fun FeaturedSection(navController: NavController, viewModel: MusicViewModel, acc
 
 data class TrendingItem(val id: String, val title: String, val artist: String, val imageUrl: String, val genre: String, val duration: String)
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun TrendingSection(items: List<TrendingItem>, viewModel: MusicViewModel, navController: NavController) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
@@ -618,6 +621,7 @@ fun TrendingSection(items: List<TrendingItem>, viewModel: MusicViewModel, navCon
 
 data class ReleaseItem(val id: String, val title: String, val artist: String, val time: String, val imageUrl: String, val genre: String, val duration: String)
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun NewReleasesSection(items: List<ReleaseItem>, viewModel: MusicViewModel, navController: NavController, accentColor: Color) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {
@@ -702,6 +706,7 @@ fun NewReleasesSection(items: List<ReleaseItem>, viewModel: MusicViewModel, navC
     }
 }
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun AiPlaylistGeneratorSection(viewModel: MusicViewModel, navController: androidx.navigation.NavController, accentColor: Color) {
     val isGenerating by viewModel.isGeneratingPlaylist.collectAsState()

@@ -965,18 +965,18 @@ private class UniffiJnaCleanable(
 // There are further runtime checks to chose the correct implementation
 // of the cleaner.
 private fun UniffiCleaner.Companion.create(): UniffiCleaner =
-    try {
-        // For safety's sake: if the library hasn't been run in android_cleaner = true
-        // mode, but is being run on Android, then we still need to think about
-        // Android API versions.
-        // So we check if java.lang.ref.Cleaner is there, and use that…
-        java.lang.Class.forName("java.lang.ref.Cleaner")
-        JavaLangRefCleaner()
-    } catch (e: ClassNotFoundException) {
-        // … otherwise, fallback to the JNA cleaner.
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        try {
+            java.lang.Class.forName("java.lang.ref.Cleaner")
+            JavaLangRefCleaner()
+        } catch (e: ClassNotFoundException) {
+            UniffiJnaCleaner()
+        }
+    } else {
         UniffiJnaCleaner()
     }
 
+@androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.TIRAMISU)
 private class JavaLangRefCleaner : UniffiCleaner {
     val cleaner = java.lang.ref.Cleaner.create()
 
@@ -984,6 +984,7 @@ private class JavaLangRefCleaner : UniffiCleaner {
         JavaLangRefCleanable(cleaner.register(value, cleanUpTask))
 }
 
+@androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.TIRAMISU)
 private class JavaLangRefCleanable(
     val cleanable: java.lang.ref.Cleaner.Cleanable
 ) : UniffiCleaner.Cleanable {

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.ui.player
 
 import androidx.compose.ui.test.junit4.createComposeRule

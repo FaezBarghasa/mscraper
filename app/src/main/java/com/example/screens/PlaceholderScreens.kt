@@ -1,6 +1,7 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.screens
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,6 +49,7 @@ import com.example.ui.components.GlassCard
 import com.example.ui.theme.*
 import com.example.viewmodel.MusicViewModel
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun FavoritesScreen(navController: NavController, viewModel: MusicViewModel = viewModel()) {
     val favoriteTracksEntity by viewModel.favoriteTracks.collectAsState()
@@ -100,6 +102,7 @@ fun FavoritesScreen(navController: NavController, viewModel: MusicViewModel = vi
     }
 }
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun LibraryScreen(
     navController: NavController,
@@ -127,7 +130,7 @@ fun LibraryScreen(
             id = entity.id,
             title = entity.title,
             artist = entity.artist ?: "Unknown Artist",
-            duration = String.format("%d:%02d", entity.duration / 60, entity.duration % 60),
+            duration = String.format(java.util.Locale.US, "%d:%02d", entity.duration / 60, entity.duration % 60),
             imageUrl = entity.artworkPath ?: "",
             filePath = entity.filePath,
             genre = entity.genre ?: "Unknown"
@@ -491,6 +494,7 @@ fun LibraryScreen(
 
 // SettingsScreen removed - replaced by com.example.ui.settings.SettingsScreen
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun EqualizerScreen(viewModel: MusicViewModel = viewModel()) {
     val accentColor by viewModel.themePrimary.collectAsState()
@@ -722,10 +726,10 @@ fun EqualizerScreen(viewModel: MusicViewModel = viewModel()) {
     }
 }
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun PlaylistScreen(navController: NavController, viewModel: MusicViewModel = viewModel()) {
     val queue by viewModel.queue.collectAsState()
-    val currentTrack by viewModel.currentTrack.collectAsState()
     val accentColor by viewModel.themePrimary.collectAsState()
     
     val favoriteTracksEntity by viewModel.favoriteTracks.collectAsState()
@@ -821,6 +825,7 @@ fun PlaylistScreen(navController: NavController, viewModel: MusicViewModel = vie
     }
 }
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun ArtistScreen(viewModel: MusicViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     val artists = listOf(
@@ -886,6 +891,7 @@ fun ArtistScreen(viewModel: MusicViewModel = androidx.lifecycle.viewmodel.compos
 
 data class ArtistData(val name: String, val genre: String, val listeners: String, val imageUrl: String)
 
+@androidx.media3.common.util.UnstableApi
 @Composable
 fun AlbumScreen(viewModel: MusicViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     val albums = listOf(
