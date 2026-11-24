@@ -153,6 +153,17 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
                         val durationMs = durationStr?.toLongOrNull() ?: 0L
 
+                        val parsedYear = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_YEAR)
+                            ?.toIntOrNull()
+
+                        val trackNumStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)
+                        val parsedTrackNum = trackNumStr?.substringBefore('/')?.toIntOrNull()
+
+                        val discNumStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER)
+                        val parsedDiscNum = discNumStr?.substringBefore('/')?.toIntOrNull()
+
+                        val ext = name.substringAfterLast('.', "MP3").uppercase()
+
                         val trackEntity = TrackEntity(
                             id = "imported_${java.util.UUID.randomUUID()}",
                             title = title,
@@ -161,19 +172,18 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                                 ?: "Unknown Album",
                             albumArtist = artist,
                             genre = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_GENRE)
-                                ?: "",
-                            year = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_YEAR)
-                                ?.toIntOrNull() ?: 0,
-                            trackNumber = 1,
-                            discNumber = 1,
+                                ?.takeIf { it.isNotBlank() },
+                            year = parsedYear,
+                            trackNumber = parsedTrackNum,
+                            discNumber = parsedDiscNum,
                             duration = (durationMs / 1000).toInt(),
                             bitrate = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_BITRATE)
-                                ?.toIntOrNull() ?: 0,
+                                ?.toIntOrNull() ?: 320,
                             sampleRate = 44100,
-                            format = "audio",
+                            format = ext,
                             filePath = file.uri.toString(),
                             fileSize = file.length(),
-                            artworkPath = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200",
+                            artworkPath = null,
                             dateAdded = System.currentTimeMillis()
                         )
                         trackDao.insertTrack(trackEntity)
