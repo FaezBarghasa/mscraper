@@ -114,6 +114,12 @@ impl SoundCloudExtractor {
                     .to_string();
                 let album_art_url = item["artwork_url"].as_str().map(str::to_string);
 
+                let duration_seconds = item["duration"].as_u64().map(|ms| ms / 1000);
+
+                let duration_seconds = item["duration"]
+                    .as_u64()
+                    .map(|ms| ms / 1000);
+
                 tracks.push(TrackMetadata {
                     title,
                     artist,
@@ -121,6 +127,7 @@ impl SoundCloudExtractor {
                     album_art_url,
                     track_id,
                     source: AudioSource::SoundCloud,
+                    duration_seconds,
                 });
             }
         }

@@ -63,6 +63,14 @@ object MediaApiManager {
     val rydApi: ReturnYouTubeDislikeApi = rydRetrofit.create(ReturnYouTubeDislikeApi::class.java)
     private val ffiApi = MmDlpApi()
 
+    fun formatDuration(seconds: ULong?): String {
+        if (seconds == null || seconds == 0UL) return "--:--"
+        val s = seconds.toLong()
+        val mins = s / 60
+        val secs = s % 60
+        return String.format(java.util.Locale.US, "%d:%02d", mins, secs)
+    }
+
     suspend fun searchMusic(query: String): List<com.example.model.Track> = try {
         val results = ffiApi.search(query, AudioSource.YOU_TUBE_MUSIC)
         results.map {
@@ -70,7 +78,7 @@ object MediaApiManager {
                 id = it.trackId,
                 title = it.title,
                 artist = it.artist,
-                duration = "3:30",
+                duration = formatDuration(it.durationSeconds),
                 imageUrl = it.albumArtUrl ?: "",
                 filePath = ""
             )
@@ -78,7 +86,7 @@ object MediaApiManager {
     } catch (e: Exception) {
         emptyList()
     }
-    
+
     suspend fun getStreamUrl(videoId: String): String? = try {
         ffiApi.getStreamUrl(videoId, AudioSource.YOU_TUBE_MUSIC)
     } catch (e: Exception) {

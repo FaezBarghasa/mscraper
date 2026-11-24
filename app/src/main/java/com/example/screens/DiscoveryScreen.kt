@@ -85,11 +85,18 @@ fun DiscoveryScreen(
             val results = ffiApi.search("Trending Music Synthwave", com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC)
             if (results.isNotEmpty()) {
                 trendingTracks = results.map { meta ->
+                    val durationStr = meta.durationSeconds?.let { s ->
+                        val totalSecs = s.toLong()
+                        val m = totalSecs / 60
+                        val sec = totalSecs % 60
+                        String.format(java.util.Locale.US, "%d:%02d", m, sec)
+                    } ?: "--:--"
+
                     Track(
                         id = meta.trackId,
                         title = meta.title,
                         artist = meta.artist,
-                        duration = "3:30",
+                        duration = durationStr,
                         imageUrl = meta.albumArtUrl ?: "",
                         filePath = "" // Will be resolved dynamically on tap via MediaApiManager.getStreamUrl
                     )

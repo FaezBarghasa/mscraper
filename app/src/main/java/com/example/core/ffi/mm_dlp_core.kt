@@ -1669,6 +1669,8 @@ data class TrackMetadata (
     var `trackId`: kotlin.String
     , 
     var `source`: AudioSource
+    , 
+    var `durationSeconds`: kotlin.ULong?
     
 ){
     
@@ -1691,6 +1693,7 @@ public object FfiConverterTypeTrackMetadata: FfiConverterRustBuffer<TrackMetadat
             FfiConverterOptionalString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterTypeAudioSource.read(buf),
+            FfiConverterOptionalULong.read(buf),
         )
     }
 
@@ -1700,7 +1703,8 @@ public object FfiConverterTypeTrackMetadata: FfiConverterRustBuffer<TrackMetadat
             FfiConverterOptionalString.allocationSize(value.`album`) +
             FfiConverterOptionalString.allocationSize(value.`albumArtUrl`) +
             FfiConverterString.allocationSize(value.`trackId`) +
-            FfiConverterTypeAudioSource.allocationSize(value.`source`)
+            FfiConverterTypeAudioSource.allocationSize(value.`source`) +
+            FfiConverterOptionalULong.allocationSize(value.`durationSeconds`)
     )
 
     override fun write(value: TrackMetadata, buf: ByteBuffer) {
@@ -1710,6 +1714,7 @@ public object FfiConverterTypeTrackMetadata: FfiConverterRustBuffer<TrackMetadat
             FfiConverterOptionalString.write(value.`albumArtUrl`, buf)
             FfiConverterString.write(value.`trackId`, buf)
             FfiConverterTypeAudioSource.write(value.`source`, buf)
+            FfiConverterOptionalULong.write(value.`durationSeconds`, buf)
     }
 }
 
@@ -1963,6 +1968,38 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
     }
 
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalULong: FfiConverterRustBuffer<kotlin.ULong?> {
+    override fun read(buf: ByteBuffer): kotlin.ULong? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterULong.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.ULong?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterULong.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.ULong?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterULong.write(value, buf)
+        }
+    }
 }
 
 

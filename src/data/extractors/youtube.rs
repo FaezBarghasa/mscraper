@@ -115,6 +115,42 @@ impl YouTubeExtractor {
                             .and_then(|t| t["url"].as_str())
                             .map(str::to_string);
 
+                    let duration_seconds = renderer["flexColumns"].as_array().and_then(|cols| {
+                        // Usually duration is in the last column's text run or fixed column
+                        cols.iter().find_map(|col| {
+                            let runs = col["musicResponsiveListItemFlexColumnRenderer"]["text"]["runs"].as_array()?;
+                            runs.iter().find_map(|run| {
+                                let text = run["text"].as_str()?;
+                                let parts: Vec<&str> = text.split(':').collect();
+                                if parts.len() == 2 {
+                                    let mins: u64 = parts[0].parse().ok()?;
+                                    let secs: u64 = parts[1].parse().ok()?;
+                                    Some(mins * 60 + secs)
+                                } else if parts.len() == 3 {
+                                    let hrs: u64 = parts[0].parse().ok()?;
+                                    let mins: u64 = parts[1].parse().ok()?;
+                                    let secs: u64 = parts[2].parse().ok()?;
+                                    Some(hrs * 3600 + mins * 60 + secs)
+                                } else {
+                                    None
+                                }
+                            })
+                        })
+                    }).or_else(|| {
+                        renderer["fixedColumns"][0]["musicResponsiveListItemFixedColumnRenderer"]["text"]["runs"][0]["text"]
+                            .as_str()
+                            .and_then(|text| {
+                                let parts: Vec<&str> = text.split(':').collect();
+                                if parts.len() == 2 {
+                                    let mins: u64 = parts[0].parse().ok()?;
+                                    let secs: u64 = parts[1].parse().ok()?;
+                                    Some(mins * 60 + secs)
+                                } else {
+                                    None
+                                }
+                            })
+                    });
+
                     tracks.push(TrackMetadata {
                         title,
                         artist,
@@ -122,6 +158,7 @@ impl YouTubeExtractor {
                         album_art_url,
                         track_id,
                         source: AudioSource::YouTubeMusic,
+                        duration_seconds,
                     });
                 }
             }
@@ -157,6 +194,7 @@ impl YouTubeExtractor {
                                 album_art_url: None,
                                 track_id,
                                 source: AudioSource::YouTubeMusic,
+                                duration_seconds: None,
                             });
                         }
                     }
@@ -211,6 +249,11 @@ impl YouTubeExtractor {
             .and_then(|t| t["url"].as_str())
             .map(str::to_string);
 
+        let duration_seconds = json["videoDetails"]["lengthSeconds"]
+            .as_str()
+            .and_then(|s| s.parse::<u64>().ok())
+            .or_else(|| json["videoDetails"]["lengthSeconds"].as_u64());
+
         let metadata = TrackMetadata {
             title,
             artist,
@@ -218,6 +261,7 @@ impl YouTubeExtractor {
             album_art_url,
             track_id: video_id.to_string(),
             source: AudioSource::YouTubeMusic,
+            duration_seconds,
         };
 
         // Find best audio format URL

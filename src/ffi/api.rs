@@ -63,6 +63,7 @@ pub struct TrackMetadata {
     pub album_art_url: Option<String>,
     pub track_id: String,
     pub source: AudioSource,
+    pub duration_seconds: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, uniffi::Record)]
@@ -77,6 +78,8 @@ pub struct Playlist {
 #[derive(uniffi::Object)]
 pub struct MmDlpApi {
     quic_enabled: RwLock<bool>,
+    youtube_extractor: Arc<YouTubeExtractor>,
+    soundcloud_extractor: Arc<SoundCloudExtractor>,
 }
 
 impl Default for MmDlpApi {
@@ -91,6 +94,8 @@ impl MmDlpApi {
     pub fn new() -> Self {
         Self {
             quic_enabled: RwLock::new(true),
+            youtube_extractor: Arc::new(YouTubeExtractor::new()),
+            soundcloud_extractor: Arc::new(SoundCloudExtractor::new()),
         }
     }
 
@@ -106,18 +111,11 @@ impl MmDlpApi {
         source: AudioSource,
     ) -> Result<Vec<TrackMetadata>, EngineError> {
         match source {
-            AudioSource::YouTubeMusic => {
-                let extractor = YouTubeExtractor::new();
-                extractor.search(&query).await
-            }
-            AudioSource::SoundCloud => {
-                let extractor = SoundCloudExtractor::new();
-                extractor.search(&query).await
-            }
+            AudioSource::YouTubeMusic => self.youtube_extractor.search(&query).await,
+            AudioSource::SoundCloud => self.soundcloud_extractor.search(&query).await,
             AudioSource::Spotify => {
                 // Route Spotify search queries via YouTube Music catalogue
-                let extractor = YouTubeExtractor::new();
-                extractor.search(&query).await
+                self.youtube_extractor.search(&query).await
             }
         }
     }
@@ -129,21 +127,17 @@ impl MmDlpApi {
     ) -> Result<String, EngineError> {
         match source {
             AudioSource::YouTubeMusic | AudioSource::Spotify => {
-                let extractor = YouTubeExtractor::new();
-                let (_meta, stream_url) = extractor.extract_video_info(&track_id).await?;
+                let (_meta, stream_url) =
+                    self.youtube_extractor.extract_video_info(&track_id).await?;
                 Ok(stream_url)
             }
-            AudioSource::SoundCloud => {
-                let extractor = SoundCloudExtractor::new();
-                extractor.get_stream_url(&track_id).await
-            }
+            AudioSource::SoundCloud => self.soundcloud_extractor.get_stream_url(&track_id).await,
         }
     }
 
     pub async fn extract_metadata(&self, url: String) -> Result<TrackMetadata, EngineError> {
         if url.contains("soundcloud.com") {
-            let extractor = SoundCloudExtractor::new();
-            let results = extractor.search(&url).await?;
+            let results = self.soundcloud_extractor.search(&url).await?;
             results.into_iter().next().ok_or_else(|| {
                 EngineError::Extractor("No metadata found for SoundCloud track".to_string())
             })
@@ -158,8 +152,7 @@ impl MmDlpApi {
                 url.clone()
             };
 
-            let extractor = YouTubeExtractor::new();
-            let (metadata, _stream) = extractor.extract_video_info(&video_id).await?;
+            let (metadata, _stream) = self.youtube_extractor.extract_video_info(&video_id).await?;
             Ok(metadata)
         }
     }
@@ -171,44 +164,55 @@ impl MmDlpApi {
         format: AudioFormat,
         temp_dir: String,
     ) -> Result<String, EngineError> {
-        let ext = match format {
-            AudioFormat::Flac => "flac",
-            AudioFormat::Wav => "wav",
-            AudioFormat::Mp3 => "mp3",
-        };
-
-        let file_name = format!(
-            "track_{}.{}",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_millis())
-                .unwrap_or(0),
-            ext
-        );
-        let file_path = PathBuf::from(temp_dir).join(&file_name);
-
         let enable_quic = *self.quic_enabled.read().unwrap_or_else(|e| e.into_inner());
 
-        // Resolve stream URL if input is a YouTube/SoundCloud webpage URL
-        let stream_url = if url.contains("youtube.com") || url.contains("youtu.be") {
-            let video_id = if let Some(idx) = url.find("v=") {
-                let rest = &url[idx + 2..];
-                rest.split('&').next().unwrap_or(rest).to_string()
-            } else if let Some(idx) = url.find("youtu.be/") {
-                let rest = &url[idx + 9..];
-                rest.split('?').next().unwrap_or(rest).to_string()
+        // Resolve stream URL and canonical track ID
+        let (canonical_id, stream_url) =
+            if url.contains("youtube.com") || url.contains("youtu.be") {
+                let video_id = if let Some(idx) = url.find("v=") {
+                    let rest = &url[idx + 2..];
+                    rest.split('&').next().unwrap_or(rest).to_string()
+                } else if let Some(idx) = url.find("youtu.be/") {
+                    let rest = &url[idx + 9..];
+                    rest.split('?').next().unwrap_or(rest).to_string()
+                } else {
+                    url.clone()
+                };
+                let stream = self
+                    .youtube_extractor
+                    .extract_video_info(&video_id)
+                    .await
+                    .map(|(_meta, s)| s)
+                    .unwrap_or_else(|_| url.clone());
+                (video_id, stream)
             } else {
-                url.clone()
+                use std::hash::{DefaultHasher, Hasher};
+                let mut hasher = DefaultHasher::new();
+                hasher.write(url.as_bytes());
+                let raw_hash = format!("{:016x}", hasher.finish());
+                (raw_hash, url)
             };
-            let extractor = YouTubeExtractor::new();
-            extractor
-                .extract_video_info(&video_id)
-                .await
-                .map(|(_meta, stream)| stream)
-                .unwrap_or(url)
+
+        // Determine realistic container extension from stream or requested format
+        let ext = if stream_url.contains("mime=audio%2Fwebm") || stream_url.contains("audio/webm")
+        {
+            "webm"
+        } else if stream_url.contains("mime=audio%2Fmp4") || stream_url.contains("audio/mp4") {
+            "m4a"
         } else {
-            url
+            match format {
+                AudioFormat::Flac => "flac",
+                AudioFormat::Wav => "wav",
+                AudioFormat::Mp3 => "mp3",
+            }
         };
+
+        let sanitized_id: String = canonical_id
+            .chars()
+            .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+            .collect();
+        let file_name = format!("track_{}.{}", sanitized_id, ext);
+        let file_path = PathBuf::from(temp_dir).join(&file_name);
 
         GLOBAL_QUIC_CLIENT
             .stream_to_file(&stream_url, &file_path, enable_quic)
