@@ -258,7 +258,7 @@ fun SidebarContent(
             }
         }
 
-        Divider(color = Color.White.copy(alpha = 0.08f), thickness = 1.dp)
+        HorizontalDivider(color = Color.White.copy(alpha = 0.08f), thickness = 1.dp)
         Spacer(modifier = Modifier.height(16.dp))
 
         // Create Playlist Action

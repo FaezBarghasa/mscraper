@@ -467,52 +467,50 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             player.prepare()
         }
 
-        // Progress simulator loop running asynchronously on a background thread pool (Dispatchers.Default)
-        viewModelScope.launch(Dispatchers.Default) {
+        // Real ExoPlayer playback clock observation loop
+        viewModelScope.launch(Dispatchers.Main) {
             while (true) {
-                delay(100L)
-                if (_isPlaying.value) {
-                    val track = _currentTrack.value
-                    if (track != null) {
-                        val totalSecs = try {
-                            val parts = track.duration.split(":")
-                            val mins = parts[0].toInt()
-                            val secs = parts[1].toInt()
-                            mins * 60 + secs
-                        } catch (e: Exception) {
-                            240
+                if (player.isPlaying) {
+                    val durationMs = player.duration
+                    val currentMs = player.currentPosition
+                    if (durationMs > 0) {
+                        _playbackProgress.value = (currentMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
+                    }
+                }
+                delay(250L)
+            }
+        }
+
+        // ExoPlayer lifecycle and track auto-advance listener
+        player.addListener(object : androidx.media3.common.Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == androidx.media3.common.Player.STATE_ENDED) {
+                    when (_repeatMode.value) {
+                        RepeatMode.ONE -> {
+                            player.seekTo(0)
+                            player.play()
                         }
-                        val increment = 0.1f / totalSecs
-                        _playbackProgress.update { curr ->
-                            val next = curr + increment
-                            if (next >= 1.0f) {
-                                when (_repeatMode.value) {
-                                    RepeatMode.ONE -> {
-                                        0.0f // repeat same track
-                                    }
-                                    RepeatMode.ALL -> {
-                                        nextTrack()
-                                        0.0f
-                                    }
-                                    RepeatMode.NONE -> {
-                                        val currentIdx = _queue.value.indexOfFirst { it.id == track.id }
-                                        if (currentIdx != -1 && currentIdx < _queue.value.size - 1) {
-                                            nextTrack()
-                                            0.0f
-                                        } else {
-                                            _isPlaying.value = false
-                                            1.0f
-                                        }
-                                    }
-                                }
+                        RepeatMode.ALL -> {
+                            nextTrack()
+                        }
+                        RepeatMode.NONE -> {
+                            val track = _currentTrack.value
+                            val currentIdx = _queue.value.indexOfFirst { it.id == track?.id }
+                            if (currentIdx != -1 && currentIdx < _queue.value.size - 1) {
+                                nextTrack()
                             } else {
-                                next
+                                _isPlaying.value = false
+                                _playbackProgress.value = 1.0f
                             }
                         }
                     }
                 }
             }
-        }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                _isPlaying.value = isPlaying
+            }
+        })
         
         // Track observation stream running asynchronously on background dispatcher (Dispatchers.Default)
         viewModelScope.launch(Dispatchers.Default) {
