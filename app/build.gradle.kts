@@ -60,7 +60,15 @@ android {
     compose = true
     buildConfig = true
   }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      all {
+        it.systemProperty("jna.library.path", "${rootDir}/target/release:${rootDir}/target/debug")
+        it.systemProperty("uniffi.component.mm_dlp_core.libraryOverride", "${rootDir}/target/release/libmm_dlp_core.so")
+      }
+    }
+  }
 }
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
@@ -86,6 +94,7 @@ configurations.all {
 // This makes it easy to add them back in the future if needed.
 dependencies {
   implementation("net.java.dev.jna:jna:5.14.0@aar")
+  testImplementation("net.java.dev.jna:jna:5.14.0")
   implementation(platform(libs.androidx.compose.bom))
   implementation(platform(libs.firebase.bom))
   // implementation(libs.accompanist.permissions)
