@@ -1049,7 +1049,7 @@ fun UtilitiesTab(viewModel: MusicViewModel, accentColor: Color, secColor: Color)
                         singleLine = true
                     )
                     Text(
-                        "💡 Emulator: use 'http://10.0.2.2:8000' to sync with your desktop SurrealDB instance.",
+                        "Emulator: use 'http://10.0.2.2:8000' to sync with your desktop SurrealDB instance.",
                         style = MaterialTheme.typography.labelSmall,
                         color = TextGray,
                         modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)

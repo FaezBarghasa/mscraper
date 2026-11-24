@@ -3,6 +3,7 @@ package com.example.navigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -64,13 +65,14 @@ fun BottomNavigationBar(navController: NavController) {
         Box(
             modifier = Modifier
                 .background(Color.Transparent)
+                .navigationBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             NavigationBar(
                 modifier = Modifier
                     .clip(RoundedCornerShape(32.dp))
                     .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(32.dp)),
-                containerColor = HoloBg,
+                containerColor = com.example.ui.theme.SurfaceElevated.copy(alpha = 0.92f),
                 tonalElevation = 8.dp
             ) {
                 bottomNavItems.forEach { item ->

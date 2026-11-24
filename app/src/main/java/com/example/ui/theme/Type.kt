@@ -15,118 +15,129 @@ val provider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs
 )
 
-val interFontName = GoogleFont("Orbitron")
-val InterFontFamily = FontFamily(
-    Font(googleFont = interFontName, fontProvider = provider),
-    Font(googleFont = interFontName, fontProvider = provider, weight = FontWeight.Medium),
-    Font(googleFont = interFontName, fontProvider = provider, weight = FontWeight.Bold),
-    Font(googleFont = interFontName, fontProvider = provider, weight = FontWeight.Black)
+val displayFontName = GoogleFont("Orbitron")
+val DisplayFontFamily = FontFamily(
+    Font(googleFont = displayFontName, fontProvider = provider),
+    Font(googleFont = displayFontName, fontProvider = provider, weight = FontWeight.Medium),
+    Font(googleFont = displayFontName, fontProvider = provider, weight = FontWeight.Bold),
+    Font(googleFont = displayFontName, fontProvider = provider, weight = FontWeight.Black)
+)
+
+val bodyFontName = GoogleFont("Inter")
+val BodyFontFamily = FontFamily(
+    Font(googleFont = bodyFontName, fontProvider = provider),
+    Font(googleFont = bodyFontName, fontProvider = provider, weight = FontWeight.Medium),
+    Font(googleFont = bodyFontName, fontProvider = provider, weight = FontWeight.SemiBold),
+    Font(googleFont = bodyFontName, fontProvider = provider, weight = FontWeight.Bold)
 )
 
 val Typography = Typography(
     displayLarge = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = DisplayFontFamily,
         fontWeight = FontWeight.Black,
-        fontSize = 57.sp,
-        lineHeight = 64.sp,
-        letterSpacing = (-0.25).sp
+        fontSize = 48.sp,
+        lineHeight = 52.sp,
+        letterSpacing = (-1.0).sp
     ),
     displayMedium = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 45.sp,
-        lineHeight = 52.sp,
-        letterSpacing = 0.sp
-    ),
-    displaySmall = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = DisplayFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 36.sp,
-        lineHeight = 44.sp,
-        letterSpacing = 0.sp
-    ),
-    headlineLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 32.sp,
         lineHeight = 40.sp,
-        letterSpacing = 0.sp
+        letterSpacing = (-0.5).sp
     ),
-    headlineMedium = TextStyle(
-        fontFamily = InterFontFamily,
+    displaySmall = TextStyle(
+        fontFamily = DisplayFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 28.sp,
-        lineHeight = 36.sp,
-        letterSpacing = 0.sp
+        lineHeight = 34.sp,
+        letterSpacing = (-0.25).sp
     ),
-    headlineSmall = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 24.sp,
+    headlineLarge = TextStyle(
+        fontFamily = DisplayFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 26.sp,
         lineHeight = 32.sp,
-        letterSpacing = 0.sp
+        letterSpacing = (-0.2).sp
     ),
-    titleLarge = TextStyle(
-        fontFamily = InterFontFamily,
+    headlineMedium = TextStyle(
+        fontFamily = DisplayFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp
     ),
-    titleMedium = TextStyle(
-        fontFamily = InterFontFamily,
+    headlineSmall = TextStyle(
+        fontFamily = DisplayFontFamily,
         fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
+        fontSize = 18.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.15.sp
+        letterSpacing = 0.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = BodyFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp,
+        lineHeight = 26.sp,
+        letterSpacing = (-0.2).sp
+    ),
+    titleMedium = TextStyle(
+        fontFamily = BodyFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp,
+        lineHeight = 22.sp,
+        letterSpacing = 0.sp
     ),
     titleSmall = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontFamily = BodyFontFamily,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = BodyFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
+        letterSpacing = 0.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = BodyFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        letterSpacing = 0.25.sp
+        letterSpacing = 0.15.sp
     ),
     bodySmall = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = BodyFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.4.sp
+        letterSpacing = 0.2.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontFamily = BodyFontFamily,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        letterSpacing = 0.1.sp
+        letterSpacing = 0.1.sp,
+        fontFeatureSettings = "tnum"
     ),
     labelMedium = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = BodyFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
+        letterSpacing = 0.4.sp,
+        fontFeatureSettings = "tnum"
     ),
     labelSmall = TextStyle(
-        fontFamily = InterFontFamily,
+        fontFamily = BodyFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
+        letterSpacing = 0.5.sp,
+        fontFeatureSettings = "tnum"
     )
 )

@@ -25,7 +25,7 @@ fun MscraperTheme(
 ) {
     MaterialTheme(
         colorScheme = DarkColorScheme,
-        typography = MscraperTypography,
+        typography = Typography,
         content = content
     )
 }

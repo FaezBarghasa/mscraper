@@ -34,6 +34,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.geometry.Offset
