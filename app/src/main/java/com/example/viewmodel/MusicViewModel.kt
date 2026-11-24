@@ -259,6 +259,25 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _equalizerBands = MutableStateFlow(listOf(4f, 2f, -1f, 3f, 5f))
     val equalizerBands: StateFlow<List<Float>> = _equalizerBands.asStateFlow()
 
+    private val _bassBoostLevel = MutableStateFlow(0f)
+    val bassBoostLevel: StateFlow<Float> = _bassBoostLevel.asStateFlow()
+
+    private val _virtualizerStrength = MutableStateFlow(0f)
+    val virtualizerStrength: StateFlow<Float> = _virtualizerStrength.asStateFlow()
+
+    private val _playbackPositionMs = MutableStateFlow(0L)
+    val playbackPositionMs: StateFlow<Long> = _playbackPositionMs.asStateFlow()
+
+    private val _playbackDurationMs = MutableStateFlow(0L)
+    val playbackDurationMs: StateFlow<Long> = _playbackDurationMs.asStateFlow()
+
+    private val _playbackError = MutableSharedFlow<String>(extraBufferCapacity = 2)
+    val playbackError: SharedFlow<String> = _playbackError.asSharedFlow()
+
+    private var audioEqualizer: android.media.audiofx.Equalizer? = null
+    private var audioBassBoost: android.media.audiofx.BassBoost? = null
+    private var audioVirtualizer: android.media.audiofx.Virtualizer? = null
+
     private val _spatialAudio = MutableStateFlow(false)
     val spatialAudio: StateFlow<Boolean> = _spatialAudio.asStateFlow()
 
@@ -459,10 +478,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         // Real ExoPlayer playback clock observation loop
         viewModelScope.launch(Dispatchers.Main) {
             while (true) {
-                if (player.isPlaying) {
-                    val durationMs = player.duration
-                    val currentMs = player.currentPosition
-                    if (durationMs > 0) {
+                val durationMs = player.duration
+                val currentMs = player.currentPosition
+                if (durationMs > 0) {
+                    _playbackDurationMs.value = durationMs
+                    _playbackPositionMs.value = currentMs.coerceAtLeast(0L)
+                    if (player.isPlaying) {
                         _playbackProgress.value = (currentMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
                     }
                 }
@@ -470,10 +491,28 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        // Attach audio effects if session ID is already assigned
+        if (player.audioSessionId != androidx.media3.common.C.AUDIO_SESSION_ID_UNSET && player.audioSessionId != 0) {
+            attachAudioEffects(player.audioSessionId)
+        }
+
         // ExoPlayer lifecycle and track auto-advance listener
         player.addListener(object : androidx.media3.common.Player.Listener {
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                if (audioSessionId != androidx.media3.common.C.AUDIO_SESSION_ID_UNSET && audioSessionId != 0) {
+                    attachAudioEffects(audioSessionId)
+                }
+            }
+
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                _isPlaying.value = false
+                _playbackError.tryEmit(error.localizedMessage ?: "Playback failed")
+            }
+
             override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == androidx.media3.common.Player.STATE_ENDED) {
+                if (playbackState == androidx.media3.common.Player.STATE_READY && player.duration > 0) {
+                    _playbackDurationMs.value = player.duration
+                } else if (playbackState == androidx.media3.common.Player.STATE_ENDED) {
                     when (_repeatMode.value) {
                         RepeatMode.ONE -> {
                             player.seekTo(0)
@@ -556,7 +595,16 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     com.example.network.MediaApiManager.getStreamUrl(track.id) ?: track.filePath
                 }
 
+                if (actualUri.isBlank()) {
+                    _isPlaying.value = false
+                    _playbackError.tryEmit("Unable to resolve audio stream for ${track.title}")
+                    player.volume = _volume.value
+                    return@launch
+                }
+
                 _currentTrack.value = track
+                _playbackPositionMs.value = 0L
+                _playbackDurationMs.value = 0L
                 val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
                     .setTitle(track.title)
                     .setArtist(track.artist)
@@ -584,7 +632,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     com.example.network.MediaApiManager.getStreamUrl(track.id) ?: track.filePath
                 }
+                if (actualUri.isBlank()) {
+                    _isPlaying.value = false
+                    _playbackError.tryEmit("Unable to resolve audio stream for ${track.title}")
+                    return@launch
+                }
                 _currentTrack.value = track
+                _playbackPositionMs.value = 0L
+                _playbackDurationMs.value = 0L
                 _isPlaying.value = true
                 val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
                     .setTitle(track.title)
@@ -730,26 +785,97 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         savePlaybackSettings()
     }
 
+    private fun attachAudioEffects(audioSessionId: Int) {
+        releaseAudioEffects()
+        try {
+            audioEqualizer = android.media.audiofx.Equalizer(0, audioSessionId).apply {
+                enabled = _equalizerEnabled.value
+            }
+            applyEqualizerToNative()
+        } catch (_: Exception) {
+            audioEqualizer = null
+        }
+        try {
+            audioBassBoost = android.media.audiofx.BassBoost(0, audioSessionId).apply {
+                enabled = _equalizerEnabled.value && _bassBoostLevel.value > 0f
+                if (strengthSupported) {
+                    setStrength((_bassBoostLevel.value * 10f).toInt().coerceIn(0, 1000).toShort())
+                }
+            }
+        } catch (_: Exception) {
+            audioBassBoost = null
+        }
+        try {
+            audioVirtualizer = android.media.audiofx.Virtualizer(0, audioSessionId).apply {
+                enabled = _equalizerEnabled.value && (_virtualizerStrength.value > 0f || _spatialAudio.value)
+                if (strengthSupported) {
+                    val str = if (_spatialAudio.value && _virtualizerStrength.value == 0f) 600 else (_virtualizerStrength.value * 10f).toInt()
+                    setStrength(str.coerceIn(0, 1000).toShort())
+                }
+            }
+        } catch (_: Exception) {
+            audioVirtualizer = null
+        }
+    }
+
+    private fun applyEqualizerToNative() {
+        val eq = audioEqualizer ?: return
+        try {
+            eq.enabled = _equalizerEnabled.value
+            val bands = _equalizerBands.value
+            val numBands = eq.numberOfBands.toInt()
+            val range = eq.bandLevelRange
+            val minMb = range[0].toInt()
+            val maxMb = range[1].toInt()
+            for (i in 0 until minOf(numBands, bands.size)) {
+                val db = bands[i].coerceIn(-10f, 10f)
+                val norm = (db + 10f) / 20f
+                val targetMb = (minMb + norm * (maxMb - minMb)).toInt().coerceIn(minMb, maxMb)
+                eq.setBandLevel(i.toShort(), targetMb.toShort())
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun releaseAudioEffects() {
+        try { audioEqualizer?.release() } catch (_: Exception) {}
+        try { audioBassBoost?.release() } catch (_: Exception) {}
+        try { audioVirtualizer?.release() } catch (_: Exception) {}
+        audioEqualizer = null
+        audioBassBoost = null
+        audioVirtualizer = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        releaseAudioEffects()
+        player.release()
+    }
+
     fun setEqualizerEnabled(enabled: Boolean) {
         _equalizerEnabled.value = enabled
+        applyEqualizerToNative()
+        try {
+            audioBassBoost?.enabled = enabled && _bassBoostLevel.value > 0f
+            audioVirtualizer?.enabled = enabled && (_virtualizerStrength.value > 0f || _spatialAudio.value)
+        } catch (_: Exception) {}
     }
 
     fun setEqualizerPreset(preset: String) {
         _equalizerPreset.value = preset
-        _equalizerBands.value = when (preset) {
-            "SYNTHWAVE" -> listOf(4f, 2f, -1f, 3f, 5f)
+        _equalizerBands.value = when (preset.uppercase()) {
+            "SYNTHWAVE", "CYBERPUNK" -> listOf(4f, 2f, -1f, 3f, 5f)
             "INDUSTRIAL" -> listOf(6f, 3f, -2f, 1f, -1f)
-            "CYBER-BASS" -> listOf(8f, 5f, 1f, 0f, -2f)
+            "CYBER-BASS", "BASS BOOST" -> listOf(8f, 6f, 2f, 0f, -2f)
             "AMBIENT" -> listOf(-2f, -1f, 2f, 4f, 3f)
-            "BYPASS" -> listOf(0f, 0f, 0f, 0f, 0f)
+            "BYPASS", "FLAT" -> listOf(0f, 0f, 0f, 0f, 0f)
             "ROCK" -> listOf(5f, 3f, -1f, 2f, 4f)
             "JAZZ" -> listOf(4f, 2f, 1f, 2f, -1f)
             "CLASSICAL" -> listOf(3f, 2f, 0f, 2f, 3f)
-            "BASS BOOST" -> listOf(8f, 6f, 2f, 0f, -2f)
-            "TREBLE BOOST" -> listOf(-2f, 0f, 2f, 6f, 8f)
-            "VOCAL BOOST" -> listOf(-2f, 2f, 5f, 3f, -1f)
+            "TREBLE BOOST", "TREBLE+" -> listOf(-2f, 0f, 2f, 6f, 8f)
+            "VOCAL BOOST", "VOCAL FOCUS" -> listOf(-2f, 2f, 5f, 3f, -1f)
             else -> _equalizerBands.value
         }
+        applyEqualizerToNative()
         savePlaybackSettings()
     }
 
@@ -759,12 +885,47 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             current[index] = value
             _equalizerBands.value = current
             _equalizerPreset.value = "CUSTOM"
+            applyEqualizerToNative()
             savePlaybackSettings()
         }
     }
 
+    fun setBassBoostLevel(level: Float) {
+        val clamped = level.coerceIn(0f, 100f)
+        _bassBoostLevel.value = clamped
+        try {
+            audioBassBoost?.let { bb ->
+                bb.enabled = _equalizerEnabled.value && clamped > 0f
+                if (bb.strengthSupported) {
+                    bb.setStrength((clamped * 10f).toInt().coerceIn(0, 1000).toShort())
+                }
+            }
+        } catch (_: Exception) {}
+    }
+
+    fun setVirtualizerStrength(strength: Float) {
+        val clamped = strength.coerceIn(0f, 100f)
+        _virtualizerStrength.value = clamped
+        try {
+            audioVirtualizer?.let { vz ->
+                vz.enabled = _equalizerEnabled.value && clamped > 0f
+                if (vz.strengthSupported) {
+                    vz.setStrength((clamped * 10f).toInt().coerceIn(0, 1000).toShort())
+                }
+            }
+        } catch (_: Exception) {}
+    }
+
     fun toggleSpatialAudio() {
         _spatialAudio.update { !it }
+        try {
+            audioVirtualizer?.let { vz ->
+                vz.enabled = _equalizerEnabled.value && (_spatialAudio.value || _virtualizerStrength.value > 0f)
+                if (vz.strengthSupported && _spatialAudio.value && _virtualizerStrength.value == 0f) {
+                    vz.setStrength(600)
+                }
+            }
+        } catch (_: Exception) {}
         savePlaybackSettings()
     }
 

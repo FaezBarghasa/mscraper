@@ -28,22 +28,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.foundation.Canvas
 import coil.compose.AsyncImage
-import com.example.model.Track
 import com.example.ui.theme.DeepVoid
-import com.example.ui.theme.HoloBg
 import com.example.viewmodel.MusicViewModel
 
 @Composable
@@ -270,88 +258,6 @@ fun StereoPeakMeter(accentColor: Color) {
                     .width(3.dp)
                     .fillMaxHeight(heightPercent)
                     .background(accentColor)
-            )
-        }
-    }
-}
-
-@Composable
-fun VerticalVolumeSlider(
-    volume: Float,
-    onVolumeChange: (Float) -> Unit,
-    accentColor: Color,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0D0D0D)),
-        shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, accentColor.copy(alpha = 0.5f)),
-        modifier = modifier
-            .width(50.dp)
-            .height(180.dp)
-            .shadow(12.dp, RoundedCornerShape(16.dp), ambientColor = accentColor, spotColor = accentColor)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(vertical = 16.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .width(16.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White.copy(alpha = 0.05f))
-                    .border(0.5.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                    .pointerInput(Unit) {
-                        detectTapGestures { offset ->
-                            val height = size.height
-                            val rawValue = 1f - (offset.y / height)
-                            onVolumeChange(rawValue.coerceIn(0f, 1f))
-                        }
-                    }
-                    .pointerInput(Unit) {
-                        detectDragGestures { change, dragAmount ->
-                            change.consume()
-                            val height = size.height
-                            val rawValue = volume - (dragAmount.y / height)
-                            onVolumeChange(rawValue.coerceIn(0f, 1f))
-                        }
-                    }
-            ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val w = size.width
-                    val h = size.height
-                    val activeHeight = h * volume
-                    val yStart = h - activeHeight
-
-                    // Draw outer glow for active track
-                    drawRoundRect(
-                        color = accentColor.copy(alpha = 0.2f),
-                        topLeft = Offset(-2f, yStart - 2f),
-                        size = Size(w + 4f, activeHeight + 4f),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(w / 2, w / 2)
-                    )
-
-                    // Draw active track with gradient
-                    drawRoundRect(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(Color.White.copy(alpha = 0.8f), accentColor)
-                        ),
-                        topLeft = Offset(0f, yStart),
-                        size = Size(w, activeHeight),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(w / 2, w / 2)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "${(volume * 100).toInt()}%",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 11.sp
             )
         }
     }

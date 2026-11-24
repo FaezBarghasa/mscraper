@@ -234,8 +234,8 @@ fun EqualizerScreen(viewModel: MusicViewModel = viewModel()) {
         Spacer(modifier = Modifier.height(28.dp))
 
         // Interactive Rotary Knobs
-        var bassBoost by remember { mutableFloatStateOf(50f) }
-        var virtualizer by remember { mutableFloatStateOf(30f) }
+        val bassBoost by viewModel.bassBoostLevel.collectAsState()
+        val virtualizer by viewModel.virtualizerStrength.collectAsState()
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -244,13 +244,13 @@ fun EqualizerScreen(viewModel: MusicViewModel = viewModel()) {
             InteractiveRotaryKnob(
                 label = "BASS AMPLIFIER",
                 value = bassBoost,
-                onValueChange = { bassBoost = it },
+                onValueChange = { viewModel.setBassBoostLevel(it) },
                 accentColor = accentColor
             )
             InteractiveRotaryKnob(
                 label = "SURROUND MATRIX",
                 value = virtualizer,
-                onValueChange = { virtualizer = it },
+                onValueChange = { viewModel.setVirtualizerStrength(it) },
                 accentColor = CyberCyan
             )
         }

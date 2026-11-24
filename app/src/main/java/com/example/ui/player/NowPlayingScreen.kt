@@ -39,27 +39,36 @@ fun NowPlayingScreen(
     val currentTrack by musicViewModel.currentTrack.collectAsState()
     val isPlaying by musicViewModel.isPlaying.collectAsState()
     val progress by musicViewModel.playbackProgress.collectAsState()
+    val realPositionMs by musicViewModel.playbackPositionMs.collectAsState()
+    val realDurationMs by musicViewModel.playbackDurationMs.collectAsState()
     val isShuffleEnabled by musicViewModel.shuffleEnabled.collectAsState()
     val repeatMode by musicViewModel.repeatMode.collectAsState()
     val accentColor by musicViewModel.themePrimary.collectAsState()
 
     val haptic = LocalHapticFeedback.current
+    val snackbarHostState = remember { SnackbarHostState() }
     var isScrubbing by remember { mutableStateOf(false) }
     var scrubProgress by remember { mutableFloatStateOf(0f) }
 
-    // Derive approximate position from progress and duration string
-    val durationSeconds = remember(currentTrack) {
-        val d = currentTrack?.duration ?: "0:00"
-        try {
-            val parts = d.split(":")
-            if (parts.size == 2) parts[0].toLong() * 60 + parts[1].toLong() else 210L
-        } catch (_: Exception) {
-            210L
+    LaunchedEffect(Unit) {
+        musicViewModel.playbackError.collect { message ->
+            snackbarHostState.showSnackbar(message)
         }
     }
+
+    val metadataDurationMs = remember(currentTrack) {
+        val d = currentTrack?.duration ?: "0:00"
+        val parts = d.split(":")
+        val parsedSec = if (parts.size == 2) {
+            val mins = parts[0].toLongOrNull() ?: 0L
+            val secs = parts[1].toLongOrNull() ?: 0L
+            mins * 60 + secs
+        } else 0L
+        parsedSec * 1000L
+    }
+    val durationMs = if (realDurationMs > 0L) realDurationMs else metadataDurationMs
     val displayProgress = if (isScrubbing) scrubProgress else progress
-    val currentPositionMs = (displayProgress * durationSeconds * 1000).toLong()
-    val durationMs = durationSeconds * 1000
+    val currentPositionMs = if (isScrubbing) (scrubProgress * durationMs).toLong() else realPositionMs
 
     val artScale by animateFloatAsState(
         targetValue = if (isPlaying) 1.0f else 0.92f,
@@ -67,10 +76,10 @@ fun NowPlayingScreen(
         label = "ArtScale"
     )
 
+    Box(modifier = Modifier.fillMaxSize().background(DeepVoid)) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(DeepVoid)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp),
@@ -278,6 +287,14 @@ fun NowPlayingScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .navigationBarsPadding()
+            .padding(16.dp)
+    )
     }
 }
 
