@@ -469,15 +469,21 @@ fun TopBar(accentColor: Color, onMenuClick: () -> Unit) {
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
-            AsyncImage(
-                model = "https://lh3.googleusercontent.com/aida-public/AB6AXuD_tGqga_Z44e72kI5IVmi67kLnjr-6fBxhLjqSve1nifF44dtbOXLo2NpDnlHAHRMfEer8tYJ3p4v2L35ngM4n259ITVXOOQDdiiubBCa4MyCbY7TOj0Nh4ShlhltXA6nIIG9iMGo0JmMrPpFSfPuNqokzlhvjzwl799EqFkWTnx6CIW9AQkKkfhFazXUaOWaOZ0N2tJ_RnfUkEeD_dEKBsEqI_qumX5XsuW5PKKjEuVDOCtvJSE8IT9mFnEidbmDKJYt3C0QZ91Xq",
-                contentDescription = "Avatar",
+            Box(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .border(2.dp, accentColor, CircleShape),
-                contentScale = ContentScale.Crop
-            )
+                    .background(Color.White.copy(alpha = 0.08f))
+                    .border(1.5.dp, accentColor, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = "Profile Avatar",
+                    tint = accentColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
@@ -517,15 +523,49 @@ fun TopBar(accentColor: Color, onMenuClick: () -> Unit) {
 
 @androidx.media3.common.util.UnstableApi
 @Composable
-fun FeaturedSection(navController: NavController, viewModel: MusicViewModel, accentColor: Color) {
-    val featuredTrack = Track(
-        id = "featured_1",
-        title = "Neon Nights",
-        artist = "The Midnight",
-        duration = "4:15",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDqdCMr_-ekSmUoVVPk1cHSB1ll6kp_NQLJFI7kiw_IXENnxXFC_RUrW4mkaf1NtHvFEq4dTPYyMhau-Pnf0F7d5n_Ub4CMsZ-JVITcgaL5BMC46mUYM7psWsHbqV4XOuysvL_hJ8tKdcM0MOa9KbMTc_9nm_Nv4A7_UDx4GWYmjzey20ActLZZ11MwtsIVKBmhJihUBJylSOsJHddm1YJPlzPy-6jlVLk8qAnxNibGw58uJqVb9OKdY8FQzSROWIM0emiGU2setFX_"
-    )
-    
+fun FeaturedSection(
+    featuredTrack: Track?,
+    navController: NavController,
+    viewModel: MusicViewModel,
+    accentColor: Color
+) {
+    if (featuredTrack == null) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .height(180.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(HoloBg)
+                .border(1.dp, HoloBorder, RoundedCornerShape(24.dp))
+                .padding(24.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Column {
+                Text(
+                    text = "DECODER STATION",
+                    color = accentColor,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "AWAITING SIGNAL",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Import local audio files or search online streams.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextGray
+                )
+            }
+        }
+        return
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -537,12 +577,28 @@ fun FeaturedSection(navController: NavController, viewModel: MusicViewModel, acc
                 navController.navigate(Screen.NowPlaying.route)
             }
     ) {
-        AsyncImage(
-            model = featuredTrack.imageUrl,
-            contentDescription = "Featured",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+        if (featuredTrack.imageUrl.isNotEmpty()) {
+            AsyncImage(
+                model = featuredTrack.imageUrl,
+                contentDescription = "Featured",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(HoloBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Filled.MusicNote,
+                    contentDescription = null,
+                    tint = accentColor.copy(alpha = 0.3f),
+                    modifier = Modifier.size(96.dp)
+                )
+            }
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -569,19 +625,23 @@ fun FeaturedSection(navController: NavController, viewModel: MusicViewModel, acc
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "NEON NIGHTS",
+                text = featuredTrack.title,
                 style = MaterialTheme.typography.displayMedium,
                 color = Color.White,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
             Text(
-                text = "The Midnight",
+                text = featuredTrack.artist,
                 style = MaterialTheme.typography.titleLarge,
-                color = accentColor
+                color = accentColor,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Immerse yourself in the synth-heavy soundscapes of the future.",
+                text = "Immerse yourself in authentic high-fidelity soundscapes.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextGray
             )
@@ -602,11 +662,9 @@ fun FeaturedSection(navController: NavController, viewModel: MusicViewModel, acc
     }
 }
 
-data class TrendingItem(val id: String, val title: String, val artist: String, val imageUrl: String, val genre: String, val duration: String)
-
 @androidx.media3.common.util.UnstableApi
 @Composable
-fun TrendingSection(items: List<TrendingItem>, viewModel: MusicViewModel, navController: NavController) {
+fun TrendingSection(items: List<Track>, viewModel: MusicViewModel, navController: NavController) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -640,22 +698,35 @@ fun TrendingSection(items: List<TrendingItem>, viewModel: MusicViewModel, navCon
                         modifier = Modifier
                             .width(140.dp)
                             .clickable {
-                                viewModel.playTrack(Track(item.id, item.title, item.artist, item.duration, item.imageUrl))
+                                viewModel.playTrack(item)
                                 navController.navigate("now_playing")
                             }
                     ) {
-                        AsyncImage(
-                            model = item.imageUrl,
-                            contentDescription = item.title,
-                            modifier = Modifier
-                                .size(140.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
-                            contentScale = ContentScale.Crop
-                        )
+                        if (item.imageUrl.isNotEmpty()) {
+                            AsyncImage(
+                                model = item.imageUrl,
+                                contentDescription = item.title,
+                                modifier = Modifier
+                                    .size(140.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(140.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(HoloBg)
+                                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.MusicNote, contentDescription = null, tint = TextGray, modifier = Modifier.size(48.dp))
+                            }
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(item.title, style = MaterialTheme.typography.titleSmall, color = Color.White, maxLines = 1, fontWeight = FontWeight.Bold)
-                        Text(item.artist, style = MaterialTheme.typography.bodySmall, color = TextGray, maxLines = 1)
+                        Text(item.title, style = MaterialTheme.typography.titleSmall, color = Color.White, maxLines = 1, fontWeight = FontWeight.Bold, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        Text(item.artist, style = MaterialTheme.typography.bodySmall, color = TextGray, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -663,11 +734,9 @@ fun TrendingSection(items: List<TrendingItem>, viewModel: MusicViewModel, navCon
     }
 }
 
-data class ReleaseItem(val id: String, val title: String, val artist: String, val time: String, val imageUrl: String, val genre: String, val duration: String)
-
 @androidx.media3.common.util.UnstableApi
 @Composable
-fun NewReleasesSection(items: List<ReleaseItem>, viewModel: MusicViewModel, navController: NavController, accentColor: Color) {
+fun NewReleasesSection(items: List<Track>, viewModel: MusicViewModel, navController: NavController, accentColor: Color) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {
         Text(
             text = "NEW RELEASES",
@@ -703,28 +772,40 @@ fun NewReleasesSection(items: List<ReleaseItem>, viewModel: MusicViewModel, navC
                             .background(HoloBg)
                             .border(1.dp, HoloBorder, RoundedCornerShape(16.dp))
                             .clickable {
-                                viewModel.playTrack(Track(item.id, item.title, item.artist, item.duration, item.imageUrl))
+                                viewModel.playTrack(item)
                                 navController.navigate("now_playing")
                             }
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        AsyncImage(
-                            model = item.imageUrl,
-                            contentDescription = item.title,
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
-                        )
+                        if (item.imageUrl.isNotEmpty()) {
+                            AsyncImage(
+                                model = item.imageUrl,
+                                contentDescription = item.title,
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(DeepVoid),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.MusicNote, contentDescription = null, tint = accentColor, modifier = Modifier.size(28.dp))
+                            }
+                        }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(item.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, fontWeight = FontWeight.Bold)
-                            Text(item.artist, style = MaterialTheme.typography.labelSmall, color = accentColor, maxLines = 1)
+                            Text(item.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, fontWeight = FontWeight.Bold, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            Text(item.artist, style = MaterialTheme.typography.labelSmall, color = accentColor, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                                 Icon(Icons.Filled.Schedule, contentDescription = null, tint = TextGray, modifier = Modifier.size(12.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(item.time, style = MaterialTheme.typography.bodySmall, color = TextGray)
+                                Text(item.duration, style = MaterialTheme.typography.bodySmall, color = TextGray)
                             }
                         }
                         Box(
@@ -733,11 +814,7 @@ fun NewReleasesSection(items: List<ReleaseItem>, viewModel: MusicViewModel, navC
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.1f))
                                 .clickable {
-                                    val currentQueue = viewModel.queue.value.toMutableList()
-                                    if (!currentQueue.any { it.id == item.id }) {
-                                        currentQueue.add(Track(item.id, item.title, item.artist, item.duration, item.imageUrl))
-                                        viewModel.setQueue(currentQueue)
-                                    }
+                                    viewModel.addToQueue(item)
                                 },
                             contentAlignment = Alignment.Center
                         ) {
@@ -750,7 +827,6 @@ fun NewReleasesSection(items: List<ReleaseItem>, viewModel: MusicViewModel, navC
     }
 }
 
-
 @Composable
 fun RecentlyPlayedItem(track: Track, onClick: () -> Unit) {
     Column(
@@ -759,17 +835,35 @@ fun RecentlyPlayedItem(track: Track, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val imageUrl = track.filePath.takeIf { it.startsWith("http") } ?: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200" 
-        coil.compose.AsyncImage(
-            model = imageUrl,
-            contentDescription = "Track Art",
-            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            modifier = Modifier
-                .size(100.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(HoloBg)
-                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-        )
+        val imageUrl = track.imageUrl.takeIf { it.isNotEmpty() } ?: track.filePath
+        if (imageUrl.isNotEmpty() && (imageUrl.startsWith("http") || java.io.File(imageUrl).exists())) {
+            coil.compose.AsyncImage(
+                model = imageUrl,
+                contentDescription = "Track Art",
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(HoloBg)
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(HoloBg)
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Filled.MusicNote,
+                    contentDescription = null,
+                    tint = TextGray,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = track.title,

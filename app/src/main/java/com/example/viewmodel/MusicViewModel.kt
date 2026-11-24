@@ -224,42 +224,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         editor.apply()
     }
 
-    private val _currentTrack = MutableStateFlow<Track?>(
-        Track(
-            id = "1",
-            title = "Midnight City",
-            artist = "M83",
-            duration = "4:03",
-            imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuB09eN9Abqx8XFiF0yRGIA-y-ze1ARziS7SRJmsUyDM-dEFiMMmtjaZvLlPls6eoYtzfSshP5uia61r9QIBjpJe2rzBPb24TFvIHgjgmvzi8R-GOcc73J5ZccqGqS2jfhvBIXKEtxZusjvEVSctlJKrjxUqd0reEqu2cOA7_hMfyxu9jm_8W7XaKgvsi7v4UZh5Qq6HfrEUM8wHJMwj6ZtxO5IxbOyDp97-SKvuehyF9afHmGJdNgmNPCBxhkwV67qqmmsQuG7ivMyb"
-        )
-    )
+    private val _currentTrack = MutableStateFlow<Track?>(null)
     val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
 
-    private val _queue = MutableStateFlow<List<Track>>(
-        listOf(
-            Track(
-                "1",
-                "Midnight City",
-                "M83",
-                "4:03",
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuB09eN9Abqx8XFiF0yRGIA-y-ze1ARziS7SRJmsUyDM-dEFiMMmtjaZvLlPls6eoYtzfSshP5uia61r9QIBjpJe2rzBPb24TFvIHgjgmvzi8R-GOcc73J5ZccqGqS2jfhvBIXKEtxZusjvEVSctlJKrjxUqd0reEqu2cOA7_hMfyxu9jm_8W7XaKgvsi7v4UZh5Qq6HfrEUM8wHJMwj6ZtxO5IxbOyDp97-SKvuehyF9afHmGJdNgmNPCBxhkwV67qqmmsQuG7ivMyb"
-            ),
-            Track(
-                "2",
-                "Nightcall",
-                "Kavinsky",
-                "4:19",
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuBBEtoMVVFUzB83CnpCLLYXTr43Jig9eeoY-9-mPD-JxbAFK34_ATCUc-1yMgJk0CSHXUbMw7wEcGYUHVOgr6x4q10vVLSsJPX9-g3YzexBw7hxISrHeBcsDPd1RRluwrBqF044Dd3ntM2DQz-0U3QO6qC4eaUe10I2jSIpcNeHwxGF6-Yhb-7XDr1Ed-s5--_FD_0a__7ifb4E5BUJopP74LoSpUPlyXIN8koLo3k0LsBqbIagsysNnzGiaUqrjhSYvD28hsmYoqNs"
-            ),
-            Track(
-                "3",
-                "Tech Noir",
-                "Gunship",
-                "4:57",
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuDMKNDi5OybO4bNSthBslKCbQWGKFhvNcEAdksG8_3ImWV1Q5nvNgyd-_vaL5GVD6A10I8DNPyxpl9Pw28U8U6toBHR782OGxJ4Ii2j_cWUlUN3FNGdiQkv-7RMa2GMlJqzKmRcLf4Q4iieXC6Js51hlazr0ObcZ0NhEPIsBs4BLnyl8kNX1nmUydMul-_4wjU8q5aBI2XGUY3Mr3J3NBzPV1O8h7pf1E_EaBnZwWvoN447paZSFd3Ry4Za7NRnnkbRGo8I1O9NsbdN"
-            )
-        )
-    )
+    private val _queue = MutableStateFlow<List<Track>>(emptyList())
     val queue: StateFlow<List<Track>> = _queue.asStateFlow()
 
     private val _isPlaying = MutableStateFlow(false)
@@ -1029,13 +997,23 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         _selectedPlaylist.value = playlist
     }
 
+    fun updateTrackMetadata(id: String, title: String, artist: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            trackDao.updateTrackMetadata(id, title, artist)
+            _currentTrack.value?.let { current ->
+                if (current.id == id) {
+                    _currentTrack.value = current.copy(title = title, artist = artist)
+                }
+            }
+        }
+    }
+
     // Convert TrackEntity back to Track UI model helper
     fun TrackEntity.toUiTrack() = Track(
         id = id,
         title = title,
         artist = artist ?: "Unknown",
         duration = "${duration / 60}:${(duration % 60).toString().padStart(2, '0')}",
-        imageUrl = artworkPath
-            ?: "https://lh3.googleusercontent.com/aida-public/AB6AXuB09eN9Abqx8XFiF0yRGIA-y-ze1ARziS7SRJmsUyDM-dEFiMMmtjaZvLlPls6eoYtzfSshP5uia61r9QIBjpJe2rzBPb24TFvIHgjgmvzi8R-GOcc73J5ZccqGqS2jfhvBIXKEtxZusjvEVSctlJKrjxUqd0reEqu2cOA7_hMfyxu9jm_8W7XaKgvsi7v4UZh5Qq6HfrEUM8wHJMwj6ZtxO5IxbOyDp97-SKvuehyF9afHmGJdNgmNPCBxhkwV67qqmmsQuG7ivMyb"
+        imageUrl = artworkPath ?: ""
     )
 }
