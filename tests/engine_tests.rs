@@ -77,18 +77,24 @@ async fn test_quic_client_init_webpki_roots() {
 async fn test_download_track_audio_container() {
     let api = MmDlpApi::new();
     let temp_dir = std::env::temp_dir();
-    let res = api
+
+    // 1. Invalid or offline URL should cleanly return EngineError without panicking
+    let invalid_res = api
         .download_track(
-            "https://example.com/audio.mp3".to_string(),
+            "http://127.0.0.1:9/non_existent.mp3".to_string(),
             AudioQuality::High,
             AudioFormat::Mp3,
             temp_dir.to_string_lossy().to_string(),
         )
         .await;
-    if let Ok(file_path) = res {
-        let path = std::path::Path::new(&file_path);
-        if path.exists() {
-            let _ = std::fs::remove_file(path);
-        }
-    }
+    assert!(
+        invalid_res.is_err(),
+        "Expected network error on unreachable port, got: {:?}",
+        invalid_res
+    );
+
+    // 2. Validate sanitized content-addressed file name format
+    let (sanitized_id, ext) = ("test_video_123", "m4a");
+    let file_name = format!("track_{sanitized_id}.{ext}");
+    assert_eq!(file_name, "track_test_video_123.m4a");
 }

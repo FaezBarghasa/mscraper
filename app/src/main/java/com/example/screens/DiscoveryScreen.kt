@@ -165,7 +165,6 @@ fun DiscoveryScreen(
         GenreFilterBar(selectedGenre = selectedGenre, onGenreSelected = { selectedGenre = it }, accentColor)
         
         // AI Playlist Generator Section (DISABLED)
-        // AiPlaylistGeneratorSection(viewModel, navController, accentColor)
         // Spacer(modifier = Modifier.height(16.dp))
 
         TrendingSection(filteredTrending, viewModel, navController)
@@ -743,98 +742,6 @@ fun NewReleasesSection(items: List<ReleaseItem>, viewModel: MusicViewModel, navC
     }
 }
 
-@androidx.media3.common.util.UnstableApi
-@Composable
-fun AiPlaylistGeneratorSection(viewModel: MusicViewModel, navController: androidx.navigation.NavController, accentColor: Color) {
-    val isGenerating by viewModel.isGeneratingPlaylist.collectAsState()
-    val generatedName by viewModel.generatedPlaylistName.collectAsState()
-    val generatedTracks by viewModel.generatedPlaylistTracks.collectAsState()
-    
-    var moodQuery by remember { androidx.compose.runtime.mutableStateOf("") }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(HoloBg)
-            .border(1.dp, HoloBorder, RoundedCornerShape(16.dp))
-            .padding(16.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.AutoAwesome, contentDescription = "AI", tint = accentColor, modifier = Modifier.size(24.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("AI PLAYLIST GENERATOR", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            "Describe your mood or activity and let the system construct a neural mix for you.",
-            style = MaterialTheme.typography.bodySmall, color = TextGray
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.material3.OutlinedTextField(
-                value = moodQuery,
-                onValueChange = { moodQuery = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("e.g. late night coding in the neon rain", color = TextGray) },
-                singleLine = true,
-                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = accentColor,
-                    unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = accentColor
-                ),
-                shape = RoundedCornerShape(8.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-            androidx.compose.material3.Button(
-                onClick = {
-                    if (moodQuery.isNotBlank()) {
-                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                        viewModel.generatePlaylistWithAI(moodQuery)
-                    }
-                },
-                modifier = Modifier.height(56.dp),
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = accentColor),
-                shape = RoundedCornerShape(8.dp),
-                enabled = !isGenerating
-            ) {
-                if (isGenerating) {
-                    androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.Black, strokeWidth = 2.dp)
-                } else {
-                    Text("GENERATE", color = Color.Black, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-        
-        if (generatedName != null && generatedTracks.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("RESULT: $generatedName", style = MaterialTheme.typography.titleSmall, color = accentColor, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-            androidx.compose.material3.Button(
-                onClick = {
-                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    viewModel.setQueue(generatedTracks)
-                    viewModel.playTrack(generatedTracks.first())
-                    navController.navigate("now_playing")
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = "Play", tint = accentColor)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("PLAY GENERATED SEQUENCE (${generatedTracks.size} TRACKS)", color = Color.White)
-            }
-        }
-    }
-}
 
 @Composable
 fun RecentlyPlayedItem(track: Track, onClick: () -> Unit) {

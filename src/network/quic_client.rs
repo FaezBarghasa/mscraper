@@ -57,10 +57,8 @@ impl QuicClient {
         let mut file = tokio::fs::File::create(dest_path).await?;
 
         if enable_quic {
-            if let Ok(bytes) = self.fetch_h3(url).await {
-                file.write_all(&bytes).await?;
-                file.flush().await?;
-                return Ok(bytes.len() as u64);
+            if let Ok(total) = self.stream_h3_to_file(url, &mut file).await {
+                return Ok(total);
             }
         }
 
@@ -74,6 +72,65 @@ impl QuicClient {
         }
 
         file.flush().await?;
+        Ok(total_written)
+    }
+
+    async fn stream_h3_to_file(
+        &self,
+        url: &str,
+        file: &mut tokio::fs::File,
+    ) -> Result<u64, String> {
+        use tokio::io::AsyncWriteExt;
+
+        let uri = url.parse::<http::Uri>().map_err(|e| e.to_string())?;
+        let host = uri.host().ok_or_else(|| "No host in URI".to_string())?;
+        let port = uri.port_u16().unwrap_or(443);
+
+        let mut addrs = tokio::net::lookup_host(format!("{}:{}", host, port))
+            .await
+            .map_err(|e| format!("DNS resolution failed for {}:{} - {}", host, port, e))?;
+        let server_addr = addrs
+            .next()
+            .ok_or_else(|| format!("No IP addresses found for {}:{}", host, port))?;
+
+        let connect_fut = self
+            .endpoint
+            .connect(server_addr, host)
+            .map_err(|e| e.to_string())?;
+        let connection = tokio::time::timeout(std::time::Duration::from_secs(3), connect_fut)
+            .await
+            .map_err(|_| "QUIC connection timed out".to_string())?
+            .map_err(|e| e.to_string())?;
+
+        let (mut driver, mut send_request) = h3::client::new(h3_quinn::Connection::new(connection))
+            .await
+            .map_err(|e| e.to_string())?;
+
+        tokio::spawn(async move {
+            let _ = std::future::poll_fn(|cx| driver.poll_close(cx)).await;
+        });
+
+        let req = Request::builder()
+            .uri(uri)
+            .body(())
+            .map_err(|e| e.to_string())?;
+
+        let mut response = send_request
+            .send_request(req)
+            .await
+            .map_err(|e| e.to_string())?;
+        response.finish().await.map_err(|e| e.to_string())?;
+
+        let mut total_written = 0u64;
+        while let Some(mut chunk) = response.recv_data().await.map_err(|e| e.to_string())? {
+            let chunk_bytes = chunk.copy_to_bytes(chunk.remaining());
+            file.write_all(&chunk_bytes)
+                .await
+                .map_err(|e| e.to_string())?;
+            total_written += chunk_bytes.len() as u64;
+        }
+
+        file.flush().await.map_err(|e| e.to_string())?;
         Ok(total_written)
     }
 

@@ -42,30 +42,6 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     val backupSyncService = com.example.core.BackupSyncService(application)
     val settingsManager = com.example.core.SettingsManager(application)
     val progressManager = com.example.core.ProgressManager(libraryScanner, downloadManager, viewModelScope)
-    // val geminiGenerator = com.example.core.GeminiPlaylistGenerator()
-
-    // Gemini API state (DISABLED)
-    private val _isGeneratingPlaylist = MutableStateFlow(false)
-    val isGeneratingPlaylist: StateFlow<Boolean> = _isGeneratingPlaylist.asStateFlow()
-
-    private val _generatedPlaylistName = MutableStateFlow<String?>(null)
-    val generatedPlaylistName: StateFlow<String?> = _generatedPlaylistName.asStateFlow()
-
-    private val _generatedPlaylistTracks = MutableStateFlow<List<Track>>(emptyList())
-    val generatedPlaylistTracks: StateFlow<List<Track>> = _generatedPlaylistTracks.asStateFlow()
-
-    fun generatePlaylistWithAI(@Suppress("UNUSED_PARAMETER") mood: String) {
-        // AI Playlist Generation disabled for now
-        /*
-        viewModelScope.launch {
-            _isGeneratingPlaylist.value = true
-            val (name, tracks) = geminiGenerator.generatePlaylist(mood)
-            _generatedPlaylistName.value = name
-            _generatedPlaylistTracks.value = tracks
-            _isGeneratingPlaylist.value = false
-        }
-        */
-    }
 
     private val cronetEngine: CronetEngine? by lazy {
         try {

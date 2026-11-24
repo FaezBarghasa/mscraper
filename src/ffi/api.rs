@@ -167,35 +167,34 @@ impl MmDlpApi {
         let enable_quic = *self.quic_enabled.read().unwrap_or_else(|e| e.into_inner());
 
         // Resolve stream URL and canonical track ID
-        let (canonical_id, stream_url) =
-            if url.contains("youtube.com") || url.contains("youtu.be") {
-                let video_id = if let Some(idx) = url.find("v=") {
-                    let rest = &url[idx + 2..];
-                    rest.split('&').next().unwrap_or(rest).to_string()
-                } else if let Some(idx) = url.find("youtu.be/") {
-                    let rest = &url[idx + 9..];
-                    rest.split('?').next().unwrap_or(rest).to_string()
-                } else {
-                    url.clone()
-                };
-                let stream = self
-                    .youtube_extractor
-                    .extract_video_info(&video_id)
-                    .await
-                    .map(|(_meta, s)| s)
-                    .unwrap_or_else(|_| url.clone());
-                (video_id, stream)
+        let (canonical_id, stream_url) = if url.contains("youtube.com") || url.contains("youtu.be")
+        {
+            let video_id = if let Some(idx) = url.find("v=") {
+                let rest = &url[idx + 2..];
+                rest.split('&').next().unwrap_or(rest).to_string()
+            } else if let Some(idx) = url.find("youtu.be/") {
+                let rest = &url[idx + 9..];
+                rest.split('?').next().unwrap_or(rest).to_string()
             } else {
-                use std::hash::{DefaultHasher, Hasher};
-                let mut hasher = DefaultHasher::new();
-                hasher.write(url.as_bytes());
-                let raw_hash = format!("{:016x}", hasher.finish());
-                (raw_hash, url)
+                url.clone()
             };
+            let stream = self
+                .youtube_extractor
+                .extract_video_info(&video_id)
+                .await
+                .map(|(_meta, s)| s)
+                .unwrap_or_else(|_| url.clone());
+            (video_id, stream)
+        } else {
+            use std::hash::{DefaultHasher, Hasher};
+            let mut hasher = DefaultHasher::new();
+            hasher.write(url.as_bytes());
+            let raw_hash = format!("{:016x}", hasher.finish());
+            (raw_hash, url)
+        };
 
         // Determine realistic container extension from stream or requested format
-        let ext = if stream_url.contains("mime=audio%2Fwebm") || stream_url.contains("audio/webm")
-        {
+        let ext = if stream_url.contains("mime=audio%2Fwebm") || stream_url.contains("audio/webm") {
             "webm"
         } else if stream_url.contains("mime=audio%2Fmp4") || stream_url.contains("audio/mp4") {
             "m4a"
@@ -209,7 +208,13 @@ impl MmDlpApi {
 
         let sanitized_id: String = canonical_id
             .chars()
-            .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_alphanumeric() || c == '-' || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         let file_name = format!("track_{}.{}", sanitized_id, ext);
         let file_path = PathBuf::from(temp_dir).join(&file_name);

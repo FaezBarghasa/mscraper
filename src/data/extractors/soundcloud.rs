@@ -113,12 +113,7 @@ impl SoundCloudExtractor {
                     .unwrap_or("Unknown Artist")
                     .to_string();
                 let album_art_url = item["artwork_url"].as_str().map(str::to_string);
-
                 let duration_seconds = item["duration"].as_u64().map(|ms| ms / 1000);
-
-                let duration_seconds = item["duration"]
-                    .as_u64()
-                    .map(|ms| ms / 1000);
 
                 tracks.push(TrackMetadata {
                     title,
