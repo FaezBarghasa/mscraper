@@ -226,14 +226,12 @@ impl MmDlpApi {
             }
         });
 
-        let fetched_bytes = RUNTIME.block_on(async {
+        RUNTIME.block_on(async {
             GLOBAL_QUIC_CLIENT
-                .fetch(&stream_url, enable_quic)
+                .stream_to_file(&stream_url, &file_path, enable_quic)
                 .await
                 .map_err(|e| EngineError::Network(format!("Failed to stream audio payload: {e}")))
         })?;
-
-        std::fs::write(&file_path, fetched_bytes).map_err(|e| EngineError::Io(e.to_string()))?;
 
         Ok(file_path.to_string_lossy().to_string())
     }

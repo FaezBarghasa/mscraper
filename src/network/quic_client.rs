@@ -46,6 +46,37 @@ impl QuicClient {
         })
     }
 
+    pub async fn stream_to_file(
+        &self,
+        url: &str,
+        dest_path: &std::path::Path,
+        enable_quic: bool,
+    ) -> Result<u64, MediaError> {
+        use tokio::io::AsyncWriteExt;
+
+        let mut file = tokio::fs::File::create(dest_path).await?;
+
+        if enable_quic {
+            if let Ok(bytes) = self.fetch_h3(url).await {
+                file.write_all(&bytes).await?;
+                file.flush().await?;
+                return Ok(bytes.len() as u64);
+            }
+        }
+
+        // Stream via reqwest directly without full in-memory buffering
+        let mut resp = self.fallback_client.get(url).send().await?;
+        let mut total_written = 0u64;
+
+        while let Some(chunk) = resp.chunk().await? {
+            file.write_all(&chunk).await?;
+            total_written += chunk.len() as u64;
+        }
+
+        file.flush().await?;
+        Ok(total_written)
+    }
+
     pub async fn fetch(&self, url: &str, enable_quic: bool) -> Result<Bytes, MediaError> {
         if enable_quic {
             match self.fetch_h3(url).await {

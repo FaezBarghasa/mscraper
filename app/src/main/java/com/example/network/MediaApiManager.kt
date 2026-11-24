@@ -63,20 +63,17 @@ object MediaApiManager {
     val rydApi: ReturnYouTubeDislikeApi = rydRetrofit.create(ReturnYouTubeDislikeApi::class.java)
     private val ffiApi = MmDlpApi()
 
-    suspend fun searchMusic(query: String): List<PipedSearchItem> = withContext(Dispatchers.IO) {
+    suspend fun searchMusic(query: String): List<com.example.model.Track> = withContext(Dispatchers.IO) {
         try {
             val results = ffiApi.search(query, AudioSource.YOU_TUBE_MUSIC)
             results.map {
-                PipedSearchItem(
-                    url = "/watch?v=${it.trackId}",
+                com.example.model.Track(
+                    id = it.trackId,
                     title = it.title,
-                    thumbnail = it.albumArtUrl ?: "",
-                    uploaderName = it.artist,
-                    uploaderUrl = null,
-                    uploadedDate = null,
-                    views = 0L,
-                    duration = 0L,
-                    isShort = false
+                    artist = it.artist,
+                    duration = "3:30",
+                    imageUrl = it.albumArtUrl ?: "",
+                    filePath = ""
                 )
             }
         } catch (e: Exception) {
@@ -101,31 +98,7 @@ object MediaApiManager {
         }
     }
 
-    suspend fun getPlaylist(playlistId: String): PipedPlaylistResponse {
-        return PipedPlaylistResponse(
-            name = "Playlist",
-            thumbnailUrl = "",
-            description = null,
-            uploader = "YouTube Music",
-            uploaderUrl = null,
-            videos = 0,
-            relatedItems = emptyList()
-        )
-    }
-
-    suspend fun getChannel(channelId: String): PipedChannelResponse {
-        return PipedChannelResponse(
-            id = channelId,
-            name = "Artist",
-            avatarUrl = null,
-            bannerUrl = null,
-            subscriberCount = 0L,
-            description = null,
-            relatedPlaylists = emptyList()
-        )
-    }
-
-    suspend fun getTrending(): List<PipedSearchItem> = withContext(Dispatchers.IO) {
+    suspend fun getTrending(): List<com.example.model.Track> = withContext(Dispatchers.IO) {
         searchMusic("Trending Music")
     }
 
