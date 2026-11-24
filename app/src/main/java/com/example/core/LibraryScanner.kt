@@ -11,8 +11,7 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
 class LibraryScanner(
-    private val trackDao: TrackDao,
-    private val surrealDbService: SurrealDbService
+    private val trackDao: TrackDao
 ) {
 
     private val _isScanning = MutableStateFlow(false)
@@ -82,11 +81,8 @@ class LibraryScanner(
                             dateAdded = System.currentTimeMillis()
                         )
 
-                        // 1. Thread-safe Local Room DB indexing
+                        // Local Room DB indexing
                         trackDao.insertTrack(ext)
-
-                        // Add to batch list for bulk SurrealDB ingestion
-                        tracksToBatch.add(ext)
 
                         newlyAddedCount.incrementAndGet()
                     }
@@ -98,11 +94,6 @@ class LibraryScanner(
                 }
             }
             jobs.awaitAll()
-        }
-
-        // 2. Perform batched transactional indexing to SurrealDB
-        if (tracksToBatch.isNotEmpty()) {
-            surrealDbService.indexTracksBatch(tracksToBatch)
         }
 
         _isScanning.value = false

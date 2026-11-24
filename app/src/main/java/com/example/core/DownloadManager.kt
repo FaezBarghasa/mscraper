@@ -85,6 +85,9 @@ class DownloadManager(
                     else -> "audio/mpeg"
                 }
 
+                val tempFile = File(tempFilePath)
+                val fileSize = if (tempFile.exists()) tempFile.length() else 0L
+
                 val publicUri = PublicStorageManager.moveToPublicDownloads(
                     context = context,
                     tempFilePath = tempFilePath,
@@ -92,12 +95,9 @@ class DownloadManager(
                     mimeType = mimeType
                 )
 
-                val publicPath = "/storage/emulated/0/Download/mscraper/$fileName"
-                MediaScanner.scanFile(context, publicPath, mimeType)
+                MediaScanner.scanFile(context, publicUri.toString(), mimeType)
 
                 val parsedBitrate = targetBitrate.substringBefore("k").toIntOrNull() ?: 320
-                val downloadedFile = File(tempFilePath)
-                val fileSize = if (downloadedFile.exists()) downloadedFile.length() else 0L
                 val trackDuration = (mediaInfo.durationSeconds?.toLong() ?: 0L).toInt()
 
                 insertTrackIntoDb(
@@ -118,7 +118,8 @@ class DownloadManager(
                             j.copy(
                                 status = DownloadStatus.COMPLETED,
                                 progress = 1.0f,
-                                downloadSpeed = "DONE"
+                                downloadSpeed = "DONE",
+                                fileUri = publicUri.toString()
                             )
                         } else j
                     }
@@ -157,10 +158,10 @@ class DownloadManager(
             artist = artist,
             album = "M-Scraper Downloads",
             albumArtist = artist,
-            genre = "Music",
-            year = 2026,
-            trackNumber = 1,
-            discNumber = 1,
+            genre = null,
+            year = null,
+            trackNumber = null,
+            discNumber = null,
             duration = durationSeconds,
             bitrate = bitrate,
             sampleRate = 44100,

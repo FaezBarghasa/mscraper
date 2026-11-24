@@ -64,7 +64,7 @@ fun DownloadsScreen(
                     DownloadTaskItem(task, accentColor, 
                         onDelete = { downloadViewModel.removeTask(task.id) },
                         onPlay = { 
-                            task.fileUri?.let { uri ->
+                            task.fileUri?.let { uriStr ->
                                 musicViewModel.playTrack(
                                     Track(
                                         id = task.id,
@@ -72,7 +72,7 @@ fun DownloadsScreen(
                                         artist = task.artist,
                                         duration = "--:--",
                                         imageUrl = task.imageUrl,
-                                        filePath = uri.toString()
+                                        filePath = uriStr
                                     )
                                 )
                                 navController.navigate("now_playing")
@@ -87,7 +87,7 @@ fun DownloadsScreen(
 
 @Composable
 fun DownloadTaskItem(
-    task: DownloadTask, 
+    task: com.example.model.DownloadJob, 
     accentColor: Color,
     onDelete: () -> Unit,
     onPlay: () -> Unit

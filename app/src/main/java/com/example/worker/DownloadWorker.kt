@@ -58,58 +58,63 @@ class DownloadWorker(
             val tempFile = CacheHelper.getTempFile(applicationContext, "mp3")
 
             var success = false
-            bridge.downloadAsFlow(url, tempFile.absolutePath).collect { event ->
-                when (event) {
-                    is DownloadEvent.Progress -> {
-                        val progressText = "Downloading: ${(event.percent * 100).toInt()}%"
-                        notificationManager.notify(NOTIFICATION_ID, createNotification(progressText))
-                    }
-                    is DownloadEvent.Complete -> {
-                        success = true
-                    }
-                    is DownloadEvent.Error -> {
-                        throw event.exception
+            try {
+                bridge.downloadAsFlow(url, tempFile.absolutePath).collect { event ->
+                    when (event) {
+                        is DownloadEvent.Progress -> {
+                            val progressText = "Downloading: ${(event.percent * 100).toInt()}%"
+                            notificationManager.notify(NOTIFICATION_ID, createNotification(progressText))
+                        }
+                        is DownloadEvent.Complete -> {
+                            success = true
+                        }
+                        is DownloadEvent.Error -> {
+                            throw event.exception
+                        }
                     }
                 }
-            }
 
-            if (success) {
-                val fileName = "${metadata.title}.mp3"
-                val uri = mediaStoreManager.createPendingAudioUri(fileName, "audio/mpeg")
-                if (uri != null) {
-                    mediaStoreManager.writeCacheFileToUri(tempFile, uri)
-                    mediaStoreManager.finalizeFile(uri)
-                    
-                    val fileSize = if (tempFile.exists()) tempFile.length() else 0L
-                    val durationSecs = (metadata.durationSeconds?.toLong() ?: 0L).toInt()
+                if (success) {
+                    val fileName = "${metadata.title}.mp3"
+                    val uri = mediaStoreManager.createPendingAudioUri(fileName, "audio/mpeg")
+                    if (uri != null) {
+                        val fileSize = if (tempFile.exists()) tempFile.length() else 0L
+                        mediaStoreManager.writeCacheFileToUri(tempFile, uri)
+                        mediaStoreManager.finalizeFile(uri)
 
-                    val trackEntity = TrackEntity(
-                        id = metadata.trackId,
-                        title = metadata.title,
-                        artist = metadata.artist,
-                        album = metadata.album ?: "Downloads",
-                        albumArtist = metadata.artist,
-                        genre = "Download",
-                        year = 2026,
-                        trackNumber = 1,
-                        discNumber = 1,
-                        duration = durationSecs,
-                        bitrate = 320,
-                        sampleRate = 44100,
-                        format = "mp3",
-                        filePath = uri.toString(),
-                        fileSize = fileSize,
-                        artworkPath = metadata.albumArtUrl,
-                        dateAdded = System.currentTimeMillis()
-                    )
-                    db.trackDao().insertTrack(trackEntity)
-                    tempFile.delete()
-                    Result.success()
+                        val durationSecs = (metadata.durationSeconds?.toLong() ?: 0L).toInt()
+
+                        val trackEntity = TrackEntity(
+                            id = metadata.trackId,
+                            title = metadata.title,
+                            artist = metadata.artist,
+                            album = metadata.album ?: "Downloads",
+                            albumArtist = metadata.artist,
+                            genre = null,
+                            year = null,
+                            trackNumber = null,
+                            discNumber = null,
+                            duration = durationSecs,
+                            bitrate = 320,
+                            sampleRate = 44100,
+                            format = "mp3",
+                            filePath = uri.toString(),
+                            fileSize = fileSize,
+                            artworkPath = metadata.albumArtUrl,
+                            dateAdded = System.currentTimeMillis()
+                        )
+                        db.trackDao().insertTrack(trackEntity)
+                        Result.success()
+                    } else {
+                        Result.failure()
+                    }
                 } else {
                     Result.failure()
                 }
-            } else {
-                Result.failure()
+            } finally {
+                if (tempFile.exists()) {
+                    tempFile.delete()
+                }
             }
         } catch (e: Exception) {
             Result.retry()

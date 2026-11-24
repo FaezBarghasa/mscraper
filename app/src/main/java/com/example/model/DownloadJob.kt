@@ -14,5 +14,6 @@ data class DownloadJob(
     val progress: Float, // 0f to 1f
     val downloadSpeed: String, // e.g. "4.2 MB/s"
     val format: String, // MP3, FLAC, etc.
+    val fileUri: String? = null,
     val error: String? = null
 )

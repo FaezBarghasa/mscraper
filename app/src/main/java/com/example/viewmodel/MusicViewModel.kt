@@ -34,9 +34,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val playlistTrackDao = db.playlistTrackDao()
 
     // Engines & Services (Phases 1, 2, 4, 5, 6)
-    val surrealDbService = com.example.core.SurrealDbService(application)
     val downloadManager = com.example.core.DownloadManager(trackDao, viewModelScope, application)
-    val libraryScanner = com.example.core.LibraryScanner(trackDao, surrealDbService)
+    val libraryScanner = com.example.core.LibraryScanner(trackDao)
     val duplicateManager = com.example.core.DuplicateManager(trackDao)
     val sharingService = com.example.core.SharingService(application)
     val backupSyncService = com.example.core.BackupSyncService(application)
@@ -425,16 +424,6 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
-        // Asynchronously initialize SurrealDB database schema upon application launch to ensure integrity
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = surrealDbService.initializeDatabase()
-            result.onSuccess {
-                android.util.Log.d("MusicViewModel", "SurrealDB schema initialized successfully.")
-            }.onFailure { err ->
-                android.util.Log.e("MusicViewModel", "SurrealDB schema initialization failed: ${err.message}")
-            }
-        }
-
         // Load persistency settings if available
         val pb = settingsManager.loadPlaybackSettings()
         _crossfadeEnabled.value = pb.crossfadeEnabled
