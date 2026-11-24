@@ -614,6 +614,15 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    fun seekToProgress(progress: Float) {
+        _playbackProgress.value = progress.coerceIn(0f, 1f)
+        val durationMs = player.duration
+        if (durationMs > 0) {
+            val targetMs = (progress * durationMs).toLong()
+            player.seekTo(targetMs)
+        }
+    }
+
     fun togglePlayback() {
         _isPlaying.update { !it }
         if (_isPlaying.value) {

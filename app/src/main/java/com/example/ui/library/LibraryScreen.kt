@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -103,7 +104,7 @@ fun LibraryScreen(
                     onClick = { navController.navigate("playlist") },
                     modifier = Modifier.background(Color.White.copy(alpha = 0.05f), CircleShape)
                 ) {
-                    Icon(Icons.Filled.QueueMusic, contentDescription = "Active Queue", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.QueueMusic, contentDescription = "Active Queue", tint = Color.White)
                 }
             }
         }

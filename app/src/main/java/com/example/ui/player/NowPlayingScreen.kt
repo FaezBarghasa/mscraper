@@ -27,16 +27,27 @@ import com.example.viewmodel.MusicViewModel
 @Composable
 fun NowPlayingScreen(
     onBack: () -> Unit,
-    playerViewModel: PlayerViewModel = viewModel(),
     musicViewModel: MusicViewModel = viewModel()
 ) {
-    val currentTrack by playerViewModel.currentTrack.collectAsState()
-    val isPlaying by playerViewModel.isPlaying.collectAsState()
-    val currentPosition by playerViewModel.currentPosition.collectAsState()
-    val duration by playerViewModel.duration.collectAsState()
-    val isShuffleEnabled by playerViewModel.shuffleEnabled.collectAsState()
-    val repeatMode by playerViewModel.repeatMode.collectAsState()
+    val currentTrack by musicViewModel.currentTrack.collectAsState()
+    val isPlaying by musicViewModel.isPlaying.collectAsState()
+    val progress by musicViewModel.playbackProgress.collectAsState()
+    val isShuffleEnabled by musicViewModel.shuffleEnabled.collectAsState()
+    val repeatMode by musicViewModel.repeatMode.collectAsState()
     val accentColor by musicViewModel.themePrimary.collectAsState()
+
+    // Derive approximate position from progress and duration string
+    val durationSeconds = remember(currentTrack) {
+        val d = currentTrack?.duration ?: "0:00"
+        try {
+            val parts = d.split(":")
+            if (parts.size == 2) parts[0].toLong() * 60 + parts[1].toLong() else 210L
+        } catch (_: Exception) {
+            210L
+        }
+    }
+    val currentPositionMs = (progress * durationSeconds * 1000).toLong()
+    val durationMs = durationSeconds * 1000
 
     Column(
         modifier = Modifier
@@ -111,9 +122,12 @@ fun NowPlayingScreen(
 
         // Scrubber
         Slider(
-            value = currentPosition.toFloat(),
-            onValueChange = { playerViewModel.seekTo(it.toLong()) },
-            valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
+            value = currentPositionMs.toFloat(),
+            onValueChange = { 
+                val newProgress = (it / durationMs.toFloat()).coerceIn(0f, 1f)
+                musicViewModel.seekToProgress(newProgress)
+            },
+            valueRange = 0f..durationMs.toFloat().coerceAtLeast(1f),
             colors = SliderDefaults.colors(
                 thumbColor = accentColor,
                 activeTrackColor = accentColor,
@@ -125,8 +139,8 @@ fun NowPlayingScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(formatTime(currentPosition), color = Color.Gray, style = MaterialTheme.typography.labelSmall)
-            Text(formatTime(duration), color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+            Text(formatTime(currentPositionMs), color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+            Text(formatTime(durationMs), color = Color.Gray, style = MaterialTheme.typography.labelSmall)
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -137,7 +151,7 @@ fun NowPlayingScreen(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { playerViewModel.toggleShuffle() }) {
+            IconButton(onClick = { musicViewModel.toggleShuffle() }) {
                 Icon(
                     imageVector = Icons.Default.Shuffle,
                     contentDescription = "Shuffle",
@@ -145,12 +159,12 @@ fun NowPlayingScreen(
                 )
             }
             
-            IconButton(onClick = { playerViewModel.skipPrevious() }) {
+            IconButton(onClick = { musicViewModel.previousTrack() }) {
                 Icon(Icons.Default.SkipPrevious, contentDescription = "Previous", tint = Color.White, modifier = Modifier.size(48.dp))
             }
 
             Surface(
-                onClick = { playerViewModel.togglePlayPause() },
+                onClick = { musicViewModel.togglePlayback() },
                 modifier = Modifier.size(80.dp),
                 shape = CircleShape,
                 color = accentColor,
@@ -165,19 +179,19 @@ fun NowPlayingScreen(
                 }
             }
 
-            IconButton(onClick = { playerViewModel.skipNext() }) {
+            IconButton(onClick = { musicViewModel.nextTrack() }) {
                 Icon(Icons.Default.SkipNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(48.dp))
             }
 
-            IconButton(onClick = { playerViewModel.toggleRepeat() }) {
+            IconButton(onClick = { musicViewModel.toggleRepeat() }) {
                 val icon = when (repeatMode) {
-                    androidx.media3.common.Player.REPEAT_MODE_ONE -> Icons.Default.RepeatOne
+                    com.example.viewmodel.RepeatMode.ONE -> Icons.Default.RepeatOne
                     else -> Icons.Default.Repeat
                 }
                 Icon(
                     imageVector = icon,
                     contentDescription = "Repeat",
-                    tint = if (repeatMode != androidx.media3.common.Player.REPEAT_MODE_OFF) accentColor else Color.Gray
+                    tint = if (repeatMode != com.example.viewmodel.RepeatMode.NONE) accentColor else Color.Gray
                 )
             }
         }

@@ -200,7 +200,7 @@ fun MiniPlayer(
                     ) {
                         IconButton(onClick = { showVolumeSlider = !showVolumeSlider }) {
                             Icon(
-                                imageVector = if (volumeState == 0f) Icons.Filled.VolumeOff else if (volumeState < 0.5f) Icons.Filled.VolumeDown else Icons.Filled.VolumeUp,
+                                imageVector = if (volumeState == 0f) Icons.AutoMirrored.Filled.VolumeOff else if (volumeState < 0.5f) Icons.AutoMirrored.Filled.VolumeDown else Icons.AutoMirrored.Filled.VolumeUp,
                                 contentDescription = "Volume",
                                 tint = if (showVolumeSlider) accentColor else Color.White.copy(alpha = 0.7f),
                                 modifier = Modifier.size(20.dp)
