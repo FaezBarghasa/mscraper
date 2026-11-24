@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION", "UnusedVariable")
-
 package com.example.screens
 
 import android.widget.Toast
@@ -95,7 +93,7 @@ fun CoreDeckScreen(navController: NavController, viewModel: MusicViewModel = vie
                     contentColor = accentColor,
                     edgePadding = 16.dp,
                     indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
+                        TabRowDefaults.SecondaryIndicator(
                             modifier = Modifier.tabIndicatorOffset(tabPositions[tabs.indexOf(activeTab)]),
                             color = accentColor
                         )
@@ -1199,9 +1197,9 @@ fun UtilitiesTab(viewModel: MusicViewModel, accentColor: Color, secColor: Color)
                                         endpoint, namespace, database, username, password, viewModel
                                     )
                                     res.onSuccess { msg ->
-                                        Toast.makeText(context, "🟢 RESTORE SUCCESSFUL:\n$msg", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(context, "RESTORE SUCCESSFUL:\n$msg", Toast.LENGTH_LONG).show()
                                     }.onFailure { err ->
-                                        Toast.makeText(context, "🔴 RESTORE FAILED:\n${err.message}", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(context, "RESTORE FAILED:\n${err.message}", Toast.LENGTH_LONG).show()
                                     }
                                 }
                             },

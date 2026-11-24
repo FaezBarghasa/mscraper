@@ -461,18 +461,20 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 genre = sessionPrefs.getString("track_genre", "") ?: ""
             )
             _currentTrack.value = restoredTrack
-            // Pre-load restored track in ExoPlayer
-            val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
-                .setTitle(restoredTrack.title)
-                .setArtist(restoredTrack.artist)
-                .build()
-            val mediaItem = androidx.media3.common.MediaItem.Builder()
-                .setUri(restoredTrack.filePath)
-                .setMediaId(restoredTrack.id)
-                .setMediaMetadata(mediaMetadata)
-                .build()
-            player.setMediaItem(mediaItem)
-            player.prepare()
+            // Only pre-load restored track in ExoPlayer if it points to a playable HTTP URL or local file
+            if (restoredTrack.filePath.startsWith("http") || java.io.File(restoredTrack.filePath).exists()) {
+                val mediaMetadata = androidx.media3.common.MediaMetadata.Builder()
+                    .setTitle(restoredTrack.title)
+                    .setArtist(restoredTrack.artist)
+                    .build()
+                val mediaItem = androidx.media3.common.MediaItem.Builder()
+                    .setUri(restoredTrack.filePath)
+                    .setMediaId(restoredTrack.id)
+                    .setMediaMetadata(mediaMetadata)
+                    .build()
+                player.setMediaItem(mediaItem)
+                player.prepare()
+            }
         }
 
         // Real ExoPlayer playback clock observation loop
@@ -668,6 +670,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun togglePlayback() {
+        if (player.mediaItemCount == 0) {
+            val current = _currentTrack.value
+            if (current != null) {
+                playTrack(current)
+            }
+            return
+        }
         _isPlaying.update { !it }
         if (_isPlaying.value) {
             player.play()

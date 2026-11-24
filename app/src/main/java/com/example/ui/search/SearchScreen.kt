@@ -18,6 +18,7 @@ import com.example.model.Track
 import com.example.ui.components.SourceSelector
 import com.example.ui.components.TrackList
 import com.example.ui.theme.DeepVoid
+import com.example.ui.theme.TextGray
 import com.example.ui.theme.TokyoBlue
 import com.example.ui.downloads.DownloadViewModel
 import com.example.viewmodel.MusicViewModel
@@ -45,6 +46,23 @@ fun SearchScreen(
 
     var trackToDownload by remember { mutableStateOf<Track?>(null) }
     var showFormatPicker by remember { mutableStateOf(false) }
+    var trackToAddToPlaylist by remember { mutableStateOf<Track?>(null) }
+    val playlists by musicViewModel.playlists.collectAsState()
+
+    if (trackToAddToPlaylist != null) {
+        com.example.screens.PlaylistPickerDialog(
+            track = trackToAddToPlaylist!!,
+            playlists = playlists,
+            onPlaylistSelected = { playlist ->
+                musicViewModel.addTrackToPlaylist(trackToAddToPlaylist!!, playlist.id)
+                trackToAddToPlaylist = null
+            },
+            onCreateNewPlaylist = {
+                trackToAddToPlaylist = null
+            },
+            onDismiss = { trackToAddToPlaylist = null }
+        )
+    }
 
     if (showFormatPicker && trackToDownload != null) {
         com.example.ui.downloads.FormatPickerDialog(
@@ -113,11 +131,11 @@ fun SearchScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                placeholder = { Text("Search tracks...", color = Color.Gray) },
+                placeholder = { Text("Search tracks...", color = TextGray) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = accentColor) },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = accentColor,
-                    unfocusedBorderColor = Color.Gray,
+                    unfocusedBorderColor = TextGray,
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White
                 ),
@@ -141,7 +159,7 @@ fun SearchScreen(
                     onQueueNext = { musicViewModel.addToQueue(it, QueuePosition.NEXT) },
                     favoriteTrackIds = favoriteTrackIds,
                     onFavoriteClick = { musicViewModel.toggleFavorite(it) },
-                    onAddToPlaylist = { /* handle playlist */ },
+                    onAddToPlaylist = { trackToAddToPlaylist = it },
                     modifier = Modifier.fillMaxSize()
                 )
             }

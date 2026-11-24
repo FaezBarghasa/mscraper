@@ -8,10 +8,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.example.core.MmDlpApiImpl
 import com.example.data.settings.SettingsRepository
+import com.example.data.settings.ThemeMode
 import com.example.ui.theme.MscraperTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -37,7 +41,13 @@ class MainActivity : ComponentActivity() {
     }
 
     setContent {
-      MscraperTheme {
+      val themeMode by settingsRepository.themeMode.collectAsState(initial = ThemeMode.DARK)
+      val darkTheme = when (themeMode) {
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+      }
+      MscraperTheme(darkTheme = darkTheme) {
         com.example.navigation.MainAppScreen()
       }
     }

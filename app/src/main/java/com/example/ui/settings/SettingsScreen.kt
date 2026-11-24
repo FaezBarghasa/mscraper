@@ -22,6 +22,7 @@ import com.example.core.MmDlpApiImpl
 import com.example.data.settings.SettingsRepository
 import com.example.data.settings.ThemeMode
 import com.example.ui.theme.DeepVoid
+import com.example.ui.theme.TextGray
 import com.example.viewmodel.MusicViewModel
 
 @androidx.media3.common.util.UnstableApi
@@ -170,7 +171,7 @@ fun SettingsToggle(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(title, color = Color.White, style = MaterialTheme.typography.bodyLarge)
-            Text(subtitle, color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+            Text(subtitle, color = TextGray, style = MaterialTheme.typography.bodySmall)
         }
         Switch(
             checked = checked,
@@ -207,7 +208,7 @@ fun SettingsDropdown(
             Text(currentValue, color = accentColor, style = MaterialTheme.typography.bodySmall)
         }
         Box {
-            Icon(Icons.Default.ExpandMore, contentDescription = null, tint = Color.Gray)
+            Icon(Icons.Default.ExpandMore, contentDescription = null, tint = TextGray)
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
