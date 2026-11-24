@@ -57,62 +57,82 @@ fun MiniPlayer(
     val progress by viewModel.playbackProgress.collectAsState()
     val accentColor by viewModel.themePrimary.collectAsState()
     val secColor by viewModel.themeSecondary.collectAsState()
-    val shuffleEnabled by viewModel.shuffleEnabled.collectAsState()
-    val repeatMode by viewModel.repeatMode.collectAsState()
-
     val haptic = LocalHapticFeedback.current
 
     AnimatedVisibility(
         visible = isVisible && currentTrack != null,
-        enter = slideInVertically(initialOffsetY = { it }),
-        exit = slideOutVertically(targetOffsetY = { it })
+        enter = slideInVertically(
+            animationSpec = spring(dampingRatio = 0.78f, stiffness = 380f),
+            initialOffsetY = { it }
+        ),
+        exit = slideOutVertically(
+            animationSpec = spring(dampingRatio = 0.85f, stiffness = 420f),
+            targetOffsetY = { it }
+        )
     ) {
         currentTrack?.let { track ->
+            var swipeOffset by remember { mutableFloatStateOf(0f) }
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 8.dp)
                     .shadow(
-                        elevation = 8.dp,
+                        elevation = 12.dp,
                         shape = RoundedCornerShape(20.dp),
-                        ambientColor = accentColor.copy(alpha = 0.5f),
+                        ambientColor = accentColor.copy(alpha = 0.35f),
                         spotColor = accentColor
                     )
                     .clip(RoundedCornerShape(20.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.12f),
-                                Color.White.copy(alpha = 0.05f)
-                            )
-                        )
-                    )
+                    .background(com.example.ui.theme.SurfaceElevated.copy(alpha = 0.94f))
                     .border(
                         width = 1.dp,
                         brush = Brush.linearGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.3f),
+                                Color.White.copy(alpha = 0.22f),
                                 Color.Transparent,
-                                accentColor.copy(alpha = 0.4f)
+                                accentColor.copy(alpha = 0.38f)
                             )
                         ),
                         shape = RoundedCornerShape(20.dp)
                     )
+                    .pointerInput(track.id) {
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                if (swipeOffset < -80f) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.nextTrack()
+                                } else if (swipeOffset > 80f) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.previousTrack()
+                                }
+                                swipeOffset = 0f
+                            },
+                            onDragCancel = { swipeOffset = 0f },
+                            onHorizontalDrag = { _, dragAmount ->
+                                swipeOffset += dragAmount
+                            }
+                        )
+                    }
                     .clickable { onNavigateToNowPlaying() }
             ) {
                 // Animated Progress Bar
-                val animatedProgress by animateFloatAsState(targetValue = progress)
+                val animatedProgress by animateFloatAsState(
+                    targetValue = progress,
+                    animationSpec = spring(dampingRatio = 0.9f, stiffness = 500f),
+                    label = "MiniPlayerProgress"
+                )
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(2.dp)
-                        .background(Color.White.copy(alpha = 0.1f))
+                        .height(2.5.dp)
+                        .background(Color.White.copy(alpha = 0.08f))
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(animatedProgress)
-                            .height(2.dp)
+                            .height(2.5.dp)
                             .background(Brush.horizontalGradient(listOf(accentColor, secColor)))
                     )
                 }
@@ -120,137 +140,99 @@ fun MiniPlayer(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AsyncImage(
-                        model = track.imageUrl,
-                        contentDescription = "Album Art",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                    )
+                    if (track.imageUrl.isNotEmpty()) {
+                        AsyncImage(
+                            model = track.imageUrl,
+                            contentDescription = "Album Art",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(DeepVoid),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MusicNote,
+                                contentDescription = null,
+                                tint = accentColor,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+
                     Spacer(modifier = Modifier.width(12.dp))
+
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = track.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
                             color = Color.White,
                             maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.basicMarquee()
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = track.artist,
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelMedium,
                                 color = accentColor,
                                 maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier
                                     .weight(1f, fill = false)
                                     .basicMarquee()
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
                             if (isPlaying) {
+                                Spacer(modifier = Modifier.width(8.dp))
                                 StereoPeakMeter(accentColor)
                             }
                         }
                     }
-                    IconButton(onClick = { 
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.toggleShuffle() 
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Shuffle,
-                            contentDescription = "Shuffle",
-                            tint = if (shuffleEnabled) accentColor else Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    IconButton(onClick = { 
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.toggleRepeat() 
-                    }) {
-                        val repeatIcon = if (repeatMode == com.example.viewmodel.RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat
-                        val repeatColor = if (repeatMode != com.example.viewmodel.RepeatMode.NONE) accentColor else Color.White.copy(alpha = 0.7f)
-                        Icon(
-                            imageVector = repeatIcon,
-                            contentDescription = "Repeat",
-                            tint = repeatColor,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    var showVolumeSlider by remember { mutableStateOf(false) }
-                    val volumeState by viewModel.volume.collectAsState()
 
-                    Box(
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    IconButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.togglePlayback()
+                        },
                         modifier = Modifier
-                            .pointerInput(Unit) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        val event = awaitPointerEvent()
-                                        if (event.type == PointerEventType.Enter) {
-                                            showVolumeSlider = true
-                                        } else if (event.type == PointerEventType.Exit) {
-                                            showVolumeSlider = false
-                                        }
-                                    }
-                                }
-                            }
+                            .size(48.dp)
+                            .background(accentColor.copy(alpha = 0.14f), CircleShape)
                     ) {
-                        IconButton(onClick = { showVolumeSlider = !showVolumeSlider }) {
-                            Icon(
-                                imageVector = if (volumeState == 0f) Icons.AutoMirrored.Filled.VolumeOff else if (volumeState < 0.5f) Icons.AutoMirrored.Filled.VolumeDown else Icons.AutoMirrored.Filled.VolumeUp,
-                                contentDescription = "Volume",
-                                tint = if (showVolumeSlider) accentColor else Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        if (showVolumeSlider) {
-                            Popup(
-                                alignment = Alignment.TopCenter,
-                                offset = IntOffset(0, -420),
-                                onDismissRequest = { showVolumeSlider = false },
-                                properties = PopupProperties(focusable = true)
-                            ) {
-                                VerticalVolumeSlider(
-                                    volume = volumeState,
-                                    onVolumeChange = { viewModel.setVolume(it) },
-                                    accentColor = accentColor
-                                )
-                            }
-                        }
-                    }
-                    IconButton(onClick = { 
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.previousTrack() 
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.SkipPrevious,
-                            contentDescription = "Skip Previous",
-                            tint = Color.White
-                        )
-                    }
-                    IconButton(onClick = { 
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.togglePlayback() 
-                    }) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                             contentDescription = if (isPlaying) "Pause" else "Play",
-                            tint = Color.White
+                            tint = accentColor,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
-                    IconButton(onClick = { 
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.nextTrack() 
-                    }) {
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    IconButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.nextTrack()
+                        },
+                        modifier = Modifier.size(48.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.SkipNext,
                             contentDescription = "Skip Next",
-                            tint = Color.White
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -261,14 +243,15 @@ fun MiniPlayer(
 
 @Composable
 fun StereoPeakMeter(accentColor: Color) {
+    val barDurations = remember { listOf(340, 480, 390, 520, 420) }
     Row(
         modifier = Modifier.height(12.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.Bottom
     ) {
-        val infiniteTransition = rememberInfiniteTransition()
+        val infiniteTransition = rememberInfiniteTransition(label = "PeakMeter")
         for (i in 0 until 5) {
-            val duration = (300..600).random()
+            val duration = barDurations[i]
             val delay = (0..200).random()
             val heightPercent by infiniteTransition.animateFloat(
                 initialValue = 0.2f,
