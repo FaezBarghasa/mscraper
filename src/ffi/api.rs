@@ -2,6 +2,12 @@ use crate::network::quic_client::QuicClient;
 use std::path::PathBuf;
 use std::sync::RwLock;
 
+#[derive(Debug, thiserror::Error, uniffi::Error)]
+pub enum EngineError {
+    #[error("Engine error: {0}")]
+    Generic(String),
+}
+
 #[derive(uniffi::Object)]
 pub struct MmDlpEngine {
     quic_enabled: RwLock<bool>,
@@ -28,20 +34,20 @@ impl MmDlpEngine {
         _quality: String,
         _format: String,
         temp_dir: String,
-    ) -> Result<String, String> {
+    ) -> Result<String, EngineError> {
         let enable_quic = *self.quic_enabled.read().unwrap_or_else(|e| e.into_inner());
-        let quic_client = QuicClient::new().map_err(|e| e.to_string())?;
+        let quic_client = QuicClient::new().map_err(|e| EngineError::Generic(e.to_string()))?;
 
         let bytes = quic_client
             .fetch(&url, enable_quic)
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| EngineError::Generic(e.to_string()))?;
 
         let file_path = PathBuf::from(temp_dir).join("downloaded_track.ext");
 
         tokio::fs::write(&file_path, bytes)
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| EngineError::Generic(e.to_string()))?;
 
         Ok(file_path.to_string_lossy().to_string())
     }
