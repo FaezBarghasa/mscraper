@@ -49,7 +49,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 .enableQuic(true)
                 .enableHttp2(true)
                 .build()
-        } catch (e: Exception) { null }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private val downloadCache: androidx.media3.datasource.cache.SimpleCache by lazy {
@@ -117,9 +119,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     val searchResults: StateFlow<List<Track>> = combine(synchronizedLibrary, _searchQuery) { lib, query ->
         if (query.isBlank()) emptyList()
-        else lib.filter { 
-            it.title.contains(query, ignoreCase = true) || 
-            it.artist.contains(query, ignoreCase = true)
+        else lib.filter {
+            it.title.contains(query, ignoreCase = true) ||
+                    it.artist.contains(query, ignoreCase = true)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -131,35 +133,43 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val app = getApplication<Application>()
             val documentFile = androidx.documentfile.provider.DocumentFile.fromTreeUri(app, uri)
-            
+
             documentFile?.listFiles()?.forEach { file ->
                 val name = file.name ?: ""
-                if (file.isFile && (name.endsWith(".mp3", ignoreCase = true) || 
-                    name.endsWith(".flac", ignoreCase = true) ||
-                    name.endsWith(".m4a", ignoreCase = true) ||
-                    name.endsWith(".wav", ignoreCase = true) ||
-                    name.endsWith(".ogg", ignoreCase = true))) {
-                    
+                if (file.isFile && (name.endsWith(".mp3", ignoreCase = true) ||
+                            name.endsWith(".flac", ignoreCase = true) ||
+                            name.endsWith(".m4a", ignoreCase = true) ||
+                            name.endsWith(".wav", ignoreCase = true) ||
+                            name.endsWith(".ogg", ignoreCase = true))
+                ) {
+
                     val retriever = android.media.MediaMetadataRetriever()
                     try {
                         retriever.setDataSource(app, file.uri)
-                        val title = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE) ?: name
-                        val artist = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST) ?: "Unknown Artist"
-                        val durationStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                        val title =
+                            retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE) ?: name
+                        val artist = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                            ?: "Unknown Artist"
+                        val durationStr =
+                            retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
                         val durationMs = durationStr?.toLongOrNull() ?: 0L
-                        
+
                         val trackEntity = TrackEntity(
                             id = "imported_${java.util.UUID.randomUUID()}",
                             title = title,
                             artist = artist,
-                            album = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM) ?: "Unknown Album",
+                            album = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUM)
+                                ?: "Unknown Album",
                             albumArtist = artist,
-                            genre = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_GENRE) ?: "",
-                            year = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_YEAR)?.toIntOrNull() ?: 0,
+                            genre = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_GENRE)
+                                ?: "",
+                            year = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_YEAR)
+                                ?.toIntOrNull() ?: 0,
                             trackNumber = 1,
                             discNumber = 1,
                             duration = (durationMs / 1000).toInt(),
-                            bitrate = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toIntOrNull() ?: 0,
+                            bitrate = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_BITRATE)
+                                ?.toIntOrNull() ?: 0,
                             sampleRate = 44100,
                             format = "audio",
                             filePath = file.uri.toString(),
@@ -173,14 +183,16 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     } finally {
                         try {
                             retriever.release()
-                        } catch (e: Exception) {}
+                        } catch (e: Exception) {
+                        }
                     }
                 }
             }
         }
     }
 
-    private val sessionPrefs = application.getSharedPreferences("m-scraper_session_v1", android.content.Context.MODE_PRIVATE)
+    private val sessionPrefs =
+        application.getSharedPreferences("m-scraper_session_v1", android.content.Context.MODE_PRIVATE)
 
     private fun saveSession() {
         val editor = sessionPrefs.edit()
@@ -210,16 +222,34 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         )
     )
     val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
-    
+
     private val _queue = MutableStateFlow<List<Track>>(
         listOf(
-            Track("1", "Midnight City", "M83", "4:03", "https://lh3.googleusercontent.com/aida-public/AB6AXuB09eN9Abqx8XFiF0yRGIA-y-ze1ARziS7SRJmsUyDM-dEFiMMmtjaZvLlPls6eoYtzfSshP5uia61r9QIBjpJe2rzBPb24TFvIHgjgmvzi8R-GOcc73J5ZccqGqS2jfhvBIXKEtxZusjvEVSctlJKrjxUqd0reEqu2cOA7_hMfyxu9jm_8W7XaKgvsi7v4UZh5Qq6HfrEUM8wHJMwj6ZtxO5IxbOyDp97-SKvuehyF9afHmGJdNgmNPCBxhkwV67qqmmsQuG7ivMyb"),
-            Track("2", "Nightcall", "Kavinsky", "4:19", "https://lh3.googleusercontent.com/aida-public/AB6AXuBBEtoMVVFUzB83CnpCLLYXTr43Jig9eeoY-9-mPD-JxbAFK34_ATCUc-1yMgJk0CSHXUbMw7wEcGYUHVOgr6x4q10vVLSsJPX9-g3YzexBw7hxISrHeBcsDPd1RRluwrBqF044Dd3ntM2DQz-0U3QO6qC4eaUe10I2jSIpcNeHwxGF6-Yhb-7XDr1Ed-s5--_FD_0a__7ifb4E5BUJopP74LoSpUPlyXIN8koLo3k0LsBqbIagsysNnzGiaUqrjhSYvD28hsmYoqNs"),
-            Track("3", "Tech Noir", "Gunship", "4:57", "https://lh3.googleusercontent.com/aida-public/AB6AXuDMKNDi5OybO4bNSthBslKCbQWGKFhvNcEAdksG8_3ImWV1Q5nvNgyd-_vaL5GVD6A10I8DNPyxpl9Pw28U8U6toBHR782OGxJ4Ii2j_cWUlUN3FNGdiQkv-7RMa2GMlJqzKmRcLf4Q4iieXC6Js51hlazr0ObcZ0NhEPIsBs4BLnyl8kNX1nmUydMul-_4wjU8q5aBI2XGUY3Mr3J3NBzPV1O8h7pf1E_EaBnZwWvoN447paZSFd3Ry4Za7NRnnkbRGo8I1O9NsbdN")
+            Track(
+                "1",
+                "Midnight City",
+                "M83",
+                "4:03",
+                "https://lh3.googleusercontent.com/aida-public/AB6AXuB09eN9Abqx8XFiF0yRGIA-y-ze1ARziS7SRJmsUyDM-dEFiMMmtjaZvLlPls6eoYtzfSshP5uia61r9QIBjpJe2rzBPb24TFvIHgjgmvzi8R-GOcc73J5ZccqGqS2jfhvBIXKEtxZusjvEVSctlJKrjxUqd0reEqu2cOA7_hMfyxu9jm_8W7XaKgvsi7v4UZh5Qq6HfrEUM8wHJMwj6ZtxO5IxbOyDp97-SKvuehyF9afHmGJdNgmNPCBxhkwV67qqmmsQuG7ivMyb"
+            ),
+            Track(
+                "2",
+                "Nightcall",
+                "Kavinsky",
+                "4:19",
+                "https://lh3.googleusercontent.com/aida-public/AB6AXuBBEtoMVVFUzB83CnpCLLYXTr43Jig9eeoY-9-mPD-JxbAFK34_ATCUc-1yMgJk0CSHXUbMw7wEcGYUHVOgr6x4q10vVLSsJPX9-g3YzexBw7hxISrHeBcsDPd1RRluwrBqF044Dd3ntM2DQz-0U3QO6qC4eaUe10I2jSIpcNeHwxGF6-Yhb-7XDr1Ed-s5--_FD_0a__7ifb4E5BUJopP74LoSpUPlyXIN8koLo3k0LsBqbIagsysNnzGiaUqrjhSYvD28hsmYoqNs"
+            ),
+            Track(
+                "3",
+                "Tech Noir",
+                "Gunship",
+                "4:57",
+                "https://lh3.googleusercontent.com/aida-public/AB6AXuDMKNDi5OybO4bNSthBslKCbQWGKFhvNcEAdksG8_3ImWV1Q5nvNgyd-_vaL5GVD6A10I8DNPyxpl9Pw28U8U6toBHR782OGxJ4Ii2j_cWUlUN3FNGdiQkv-7RMa2GMlJqzKmRcLf4Q4iieXC6Js51hlazr0ObcZ0NhEPIsBs4BLnyl8kNX1nmUydMul-_4wjU8q5aBI2XGUY3Mr3J3NBzPV1O8h7pf1E_EaBnZwWvoN447paZSFd3Ry4Za7NRnnkbRGo8I1O9NsbdN"
+            )
         )
     )
     val queue: StateFlow<List<Track>> = _queue.asStateFlow()
-    
+
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
@@ -269,13 +299,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _offlineMode = MutableStateFlow(false)
     val offlineMode: StateFlow<Boolean> = _offlineMode.asStateFlow()
-    
+
     private val _sleepTimerMinutes = MutableStateFlow(0)
     val sleepTimerMinutes: StateFlow<Int> = _sleepTimerMinutes.asStateFlow()
 
     private val _sleepTimerSecondsLeft = MutableStateFlow(0)
     val sleepTimerSecondsLeft: StateFlow<Int> = _sleepTimerSecondsLeft.asStateFlow()
-    
+
     private var timerJob: Job? = null
 
     // Context-Aware Routing & Stream vs. Download Toggle (Phase 2 & 5)
@@ -479,9 +509,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             player.seekTo(0)
                             player.play()
                         }
+
                         RepeatMode.ALL -> {
                             nextTrack()
                         }
+
                         RepeatMode.NONE -> {
                             val track = _currentTrack.value
                             val currentIdx = _queue.value.indexOfFirst { it.id == track?.id }
@@ -500,7 +532,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 _isPlaying.value = isPlaying
             }
         })
-        
+
         // Track observation stream running asynchronously on background dispatcher (Dispatchers.Default)
         viewModelScope.launch(Dispatchers.Default) {
             _currentTrack.collect { t ->
@@ -541,12 +573,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val fadeSteps = 10
                 val fadeDuration = (_crossfadeDuration.value * 1000).toLong()
                 val stepDuration = fadeDuration / fadeSteps
-                
+
                 for (i in fadeSteps downTo 1) {
                     player.volume = (i / fadeSteps.toFloat()) * _volume.value
                     delay(stepDuration)
                 }
-                
+
                 val actualUri = if (track.filePath.startsWith("http") || java.io.File(track.filePath).exists()) {
                     track.filePath
                 } else {
@@ -567,7 +599,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 player.setMediaItem(mediaItem)
                 player.prepare()
                 player.play()
-                
+
                 // Fade in
                 for (i in 1..fadeSteps) {
                     player.volume = (i / fadeSteps.toFloat()) * _volume.value
@@ -600,7 +632,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-    
+
     fun seekToProgress(progress: Float) {
         _playbackProgress.value = progress.coerceIn(0f, 1f)
         val durationMs = player.duration
@@ -647,7 +679,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     fun addToQueue(track: Track, position: QueuePosition = QueuePosition.END) {
         val q = _queue.value.toMutableList()
         val current = _currentTrack.value
-        
+
         // Remove existing to avoid duplicates in the live stream
         q.removeAll { it.id == track.id }
 
@@ -665,6 +697,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 playTrack(track)
             }
+
             QueuePosition.NEXT -> {
                 if (current != null) {
                     val idx = q.indexOfFirst { it.id == current.id }
@@ -677,6 +710,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     q.add(0, track)
                 }
             }
+
             QueuePosition.END -> {
                 q.add(track)
             }
@@ -715,7 +749,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     fun setQueue(tracks: List<Track>) {
         _queue.value = tracks
     }
-    
+
     fun toggleCrossfade() {
         _crossfadeEnabled.update { !it }
         savePlaybackSettings()
@@ -827,7 +861,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleOfflineMode() {
         _offlineMode.update { !it }
     }
-    
+
     fun setSleepTimer(minutes: Int) {
         _sleepTimerMinutes.value = minutes
         _sleepTimerSecondsLeft.value = minutes * 60
@@ -880,7 +914,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             id = entity.id,
                             title = entity.title,
                             artist = entity.artist ?: "Unknown Artist",
-                            duration = String.format(java.util.Locale.US, "%d:%02d", entity.duration / 60, entity.duration % 60),
+                            duration = String.format(
+                                java.util.Locale.US,
+                                "%d:%02d",
+                                entity.duration / 60,
+                                entity.duration % 60
+                            ),
                             imageUrl = entity.artworkPath ?: "",
                             filePath = entity.filePath
                         )
@@ -932,7 +971,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         duration = try {
                             val parts = track.duration.split(":")
                             parts[0].toInt() * 60 + parts[1].toInt()
-                        } catch (e: Exception) { 240 },
+                        } catch (e: Exception) {
+                            240
+                        },
                         bitrate = 320,
                         sampleRate = 44100,
                         format = "mp3",
@@ -971,6 +1012,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         title = title,
         artist = artist ?: "Unknown",
         duration = "${duration / 60}:${(duration % 60).toString().padStart(2, '0')}",
-        imageUrl = artworkPath ?: "https://lh3.googleusercontent.com/aida-public/AB6AXuB09eN9Abqx8XFiF0yRGIA-y-ze1ARziS7SRJmsUyDM-dEFiMMmtjaZvLlPls6eoYtzfSshP5uia61r9QIBjpJe2rzBPb24TFvIHgjgmvzi8R-GOcc73J5ZccqGqS2jfhvBIXKEtxZusjvEVSctlJKrjxUqd0reEqu2cOA7_hMfyxu9jm_8W7XaKgvsi7v4UZh5Qq6HfrEUM8wHJMwj6ZtxO5IxbOyDp97-SKvuehyF9afHmGJdNgmNPCBxhkwV67qqmmsQuG7ivMyb"
+        imageUrl = artworkPath
+            ?: "https://lh3.googleusercontent.com/aida-public/AB6AXuB09eN9Abqx8XFiF0yRGIA-y-ze1ARziS7SRJmsUyDM-dEFiMMmtjaZvLlPls6eoYtzfSshP5uia61r9QIBjpJe2rzBPb24TFvIHgjgmvzi8R-GOcc73J5ZccqGqS2jfhvBIXKEtxZusjvEVSctlJKrjxUqd0reEqu2cOA7_hMfyxu9jm_8W7XaKgvsi7v4UZh5Qq6HfrEUM8wHJMwj6ZtxO5IxbOyDp97-SKvuehyF9afHmGJdNgmNPCBxhkwV67qqmmsQuG7ivMyb"
     )
 }

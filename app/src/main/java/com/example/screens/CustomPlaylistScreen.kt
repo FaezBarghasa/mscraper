@@ -81,7 +81,7 @@ fun CustomPlaylistScreen(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            
+
             // Delete playlist button
             IconButton(
                 onClick = {
@@ -217,7 +217,7 @@ fun SidebarContent(
 ) {
     val playlists by viewModel.playlists.collectAsState()
     val accentColor by viewModel.themePrimary.collectAsState()
-    
+
     var showCreateDialog by remember { mutableStateOf(false) }
     var newPlaylistName by remember { mutableStateOf("") }
     var newPlaylistDesc by remember { mutableStateOf("") }
@@ -252,7 +252,7 @@ fun SidebarContent(
                     letterSpacing = 1.5.sp
                 )
             }
-            
+
             IconButton(onClick = onCloseDrawer) {
                 Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White.copy(alpha = 0.5f))
             }
@@ -491,7 +491,7 @@ fun PlaylistPickerDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = TextGray
                 )
-                
+
                 if (playlists.isEmpty()) {
                     Box(
                         modifier = Modifier

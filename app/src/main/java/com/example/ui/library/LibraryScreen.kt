@@ -13,7 +13,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +42,7 @@ fun LibraryScreen(
     val accentColor by viewModel.themePrimary.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
     var trackToAddToPlaylist by remember { mutableStateOf<Track?>(null) }
-    
+
     val favoriteTracks = favoriteTracksEntity.map { entity ->
         Track(
             id = entity.id,
@@ -50,7 +52,7 @@ fun LibraryScreen(
             imageUrl = entity.imageUrl
         )
     }
-    
+
     val localTracks = localTracksEntity.map { entity ->
         Track(
             id = entity.id,
@@ -62,12 +64,12 @@ fun LibraryScreen(
             genre = entity.genre ?: "Unknown"
         )
     }
-    
+
     val favoriteTrackIds = favoriteTracks.map { it.id }.toSet()
     var selectedTabIndex by remember { mutableStateOf(0) }
     var trackToEdit by remember { mutableStateOf<Track?>(null) }
     val tabs = listOf("ALL TRACKS", "GENRES", "FAVORITES", "PLAYLISTS")
-    
+
     val folderPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
@@ -90,7 +92,12 @@ fun LibraryScreen(
                     Icon(Icons.Filled.Menu, contentDescription = "Menu / Vault Folders", tint = Color.White)
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Text("YOUR LIBRARY", style = MaterialTheme.typography.headlineMedium, color = accentColor, fontWeight = FontWeight.Bold)
+                Text(
+                    "YOUR LIBRARY",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = accentColor,
+                    fontWeight = FontWeight.Bold
+                )
             }
             Row {
                 IconButton(
@@ -109,14 +116,14 @@ fun LibraryScreen(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        
-        TabRow(
+
+        PrimaryTabRow(
             selectedTabIndex = selectedTabIndex,
             containerColor = Color.Transparent,
             contentColor = Color.White,
-            indicator = { tabPositions ->
+            indicator = {
                 TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                    modifier = Modifier.tabIndicatorOffset(selectedTabIndex),
                     color = accentColor
                 )
             },
@@ -139,9 +146,9 @@ fun LibraryScreen(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         var librarySearchQuery by remember { mutableStateOf("") }
         OutlinedTextField(
             value = librarySearchQuery,
@@ -167,24 +174,45 @@ fun LibraryScreen(
             shape = RoundedCornerShape(12.dp),
             singleLine = true
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
-        val allTracks = (localTracks + favoriteTracks).distinctBy { it.id }.filter { 
-            it.title.contains(librarySearchQuery, ignoreCase = true) || 
-            it.artist.contains(librarySearchQuery, ignoreCase = true) 
+
+        val allTracks = (localTracks + favoriteTracks).distinctBy { it.id }.filter {
+            it.title.contains(librarySearchQuery, ignoreCase = true) ||
+                    it.artist.contains(librarySearchQuery, ignoreCase = true)
         }
-        
+
         when (selectedTabIndex) {
             0 -> {
                 if (allTracks.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize().padding(bottom = 80.dp), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            Icon(imageVector = Icons.Filled.LibraryMusic, contentDescription = null, tint = accentColor.copy(alpha = 0.3f), modifier = Modifier.size(64.dp))
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(bottom = 80.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.LibraryMusic,
+                                contentDescription = null,
+                                tint = accentColor.copy(alpha = 0.3f),
+                                modifier = Modifier.size(64.dp)
+                            )
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("NO DATA DECRYPTED", style = MaterialTheme.typography.titleMedium, color = accentColor, fontWeight = FontWeight.Bold)
+                            Text(
+                                "NO DATA DECRYPTED",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = accentColor,
+                                fontWeight = FontWeight.Bold
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Import folders or heart tracks to build your library.", style = MaterialTheme.typography.bodySmall, color = TextGray, textAlign = TextAlign.Center)
+                            Text(
+                                "Import folders or heart tracks to build your library.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextGray,
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
                 } else {
@@ -195,7 +223,12 @@ fun LibraryScreen(
                             navController.navigate("now_playing")
                         },
                         onAddToQueue = { track -> viewModel.addToQueue(track) },
-                        onQueueNext = { track -> viewModel.addToQueue(track, com.example.viewmodel.QueuePosition.NEXT) },
+                        onQueueNext = { track ->
+                            viewModel.addToQueue(
+                                track,
+                                com.example.viewmodel.QueuePosition.NEXT
+                            )
+                        },
                         favoriteTrackIds = favoriteTrackIds,
                         onFavoriteClick = { track -> viewModel.toggleFavorite(track) },
                         onEditClick = { track -> trackToEdit = track },
@@ -204,10 +237,14 @@ fun LibraryScreen(
                     )
                 }
             }
+
             1 -> {
                 val genres = allTracks.groupBy { it.genre.ifBlank { "Unknown" } }
                 if (genres.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize().padding(bottom = 80.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(bottom = 80.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text("NO GENRES DETECTED", style = MaterialTheme.typography.titleMedium, color = accentColor)
                     }
                 } else {
@@ -222,7 +259,11 @@ fun LibraryScreen(
                                             .padding(vertical = 8.dp)
                                             .clip(RoundedCornerShape(8.dp))
                                             .background(HoloBg)
-                                            .border(1.dp, if (expanded) accentColor else HoloBorder, RoundedCornerShape(8.dp))
+                                            .border(
+                                                1.dp,
+                                                if (expanded) accentColor else HoloBorder,
+                                                RoundedCornerShape(8.dp)
+                                            )
                                             .clickable { expanded = !expanded }
                                             .padding(16.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -234,7 +275,11 @@ fun LibraryScreen(
                                             color = if (expanded) accentColor else Color.White,
                                             fontWeight = FontWeight.Bold
                                         )
-                                        Text("${tracks.size} TRACKS", style = MaterialTheme.typography.labelSmall, color = TextGray)
+                                        Text(
+                                            "${tracks.size} TRACKS",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = TextGray
+                                        )
                                     }
                                     if (expanded) {
                                         tracks.forEach { track ->
@@ -245,7 +290,12 @@ fun LibraryScreen(
                                                     navController.navigate("now_playing")
                                                 },
                                                 onAddToQueue = { viewModel.addToQueue(track) },
-                                                onQueueNext = { viewModel.addToQueue(track, com.example.viewmodel.QueuePosition.NEXT) },
+                                                onQueueNext = {
+                                                    viewModel.addToQueue(
+                                                        track,
+                                                        com.example.viewmodel.QueuePosition.NEXT
+                                                    )
+                                                },
                                                 isFavorite = favoriteTrackIds.contains(track.id),
                                                 onFavoriteClick = { viewModel.toggleFavorite(track) },
                                                 onEditClick = { trackToEdit = track }
@@ -258,10 +308,18 @@ fun LibraryScreen(
                     }
                 }
             }
+
             2 -> {
                 if (favoriteTracks.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize().padding(bottom = 80.dp), contentAlignment = Alignment.Center) {
-                        Text("NO FAVORITES DECRYPTED", style = MaterialTheme.typography.titleMedium, color = accentColor)
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(bottom = 80.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "NO FAVORITES DECRYPTED",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = accentColor
+                        )
                     }
                 } else {
                     com.example.ui.components.TrackList(
@@ -279,10 +337,14 @@ fun LibraryScreen(
                     )
                 }
             }
+
             3 -> {
                 val playlistNames = listOf("CYBERPUNK HIGHWAY", "NIGHT CALL VOL. 2", "NEON MATRIX MIX", "SYNTH DRIFT")
                 val playlistCounts = listOf(24, 18, 42, 12)
-                LazyColumn(modifier = Modifier.fillMaxSize().padding(bottom = 80.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(bottom = 80.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     items(playlistNames.size) { index ->
                         Row(
                             modifier = Modifier
@@ -309,8 +371,17 @@ fun LibraryScreen(
                             }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(playlistNames[index], style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                                Text("${playlistCounts[index]} TRACKS SIGNALED", style = MaterialTheme.typography.labelSmall, color = TextGray)
+                                Text(
+                                    playlistNames[index],
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "${playlistCounts[index]} TRACKS SIGNALED",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = TextGray
+                                )
                             }
                             Icon(Icons.Filled.PlayArrow, contentDescription = "Play", tint = accentColor)
                         }
@@ -323,7 +394,7 @@ fun LibraryScreen(
     if (trackToEdit != null) {
         var editTitle by remember { mutableStateOf(trackToEdit!!.title) }
         var editArtist by remember { mutableStateOf(trackToEdit!!.artist) }
-        
+
         AlertDialog(
             onDismissRequest = { trackToEdit = null },
             title = { Text("Edit Metadata", color = accentColor, fontWeight = FontWeight.Bold) },
@@ -356,7 +427,11 @@ fun LibraryScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    android.widget.Toast.makeText(navController.context, "Metadata Updated: $editTitle", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(
+                        navController.context,
+                        "Metadata Updated: $editTitle",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
                     trackToEdit = null
                 }) {
                     Text("SAVE", color = accentColor)

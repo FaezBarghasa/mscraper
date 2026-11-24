@@ -96,17 +96,20 @@ class DownloadManager(
                 MediaScanner.scanFile(context, publicPath, mimeType)
 
                 val parsedBitrate = targetBitrate.substringBefore("k").toIntOrNull() ?: 320
-                val fileSize = 10 * 1024 * 1024L
+                val downloadedFile = File(tempFilePath)
+                val fileSize = if (downloadedFile.exists()) downloadedFile.length() else 0L
+                val trackDuration = (mediaInfo.durationSeconds?.toLong() ?: 0L).toInt()
 
                 insertTrackIntoDb(
                     jobId = jobId,
                     title = title,
                     artist = artist,
-                    imageUrl = "",
+                    imageUrl = mediaInfo.albumArtUrl ?: "",
                     format = targetFormat,
                     bitrate = parsedBitrate,
                     filePath = publicUri.toString(),
-                    fileSize = fileSize
+                    fileSize = fileSize,
+                    durationSeconds = trackDuration
                 )
 
                 _jobs.update { list ->
@@ -145,7 +148,8 @@ class DownloadManager(
         format: String,
         bitrate: Int,
         filePath: String,
-        fileSize: Long
+        fileSize: Long,
+        durationSeconds: Int = 180
     ) {
         val extTrack = TrackEntity(
             id = jobId,
@@ -157,7 +161,7 @@ class DownloadManager(
             year = 2026,
             trackNumber = 1,
             discNumber = 1,
-            duration = 180,
+            duration = durationSeconds,
             bitrate = bitrate,
             sampleRate = 44100,
             format = format,

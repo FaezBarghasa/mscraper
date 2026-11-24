@@ -8,8 +8,8 @@ import androidx.core.app.NotificationCompat
 import androidx.work.*
 import com.example.bridge.DownloadEvent
 import com.example.bridge.MmDlpBridge
-import com.example.data.local.AppDatabase
-import com.example.data.local.Song
+import com.example.db.AppDatabase
+import com.example.model.TrackEntity
 import com.example.data.storage.MediaStoreManager
 import com.example.util.CacheHelper
 import java.io.File
@@ -80,18 +80,29 @@ class DownloadWorker(
                     mediaStoreManager.writeCacheFileToUri(tempFile, uri)
                     mediaStoreManager.finalizeFile(uri)
                     
-                    val song = Song(
+                    val fileSize = if (tempFile.exists()) tempFile.length() else 0L
+                    val durationSecs = (metadata.durationSeconds?.toLong() ?: 0L).toInt()
+
+                    val trackEntity = TrackEntity(
                         id = metadata.trackId,
                         title = metadata.title,
                         artist = metadata.artist,
-                        album = metadata.album,
-                        url = url,
+                        album = metadata.album ?: "Downloads",
+                        albumArtist = metadata.artist,
+                        genre = "Download",
+                        year = 2026,
+                        trackNumber = 1,
+                        discNumber = 1,
+                        duration = durationSecs,
+                        bitrate = 320,
+                        sampleRate = 44100,
+                        format = "mp3",
                         filePath = uri.toString(),
-                        duration = "0",
-                        imageUrl = metadata.albumArtUrl ?: "",
-                        isDownloaded = true
+                        fileSize = fileSize,
+                        artworkPath = metadata.albumArtUrl,
+                        dateAdded = System.currentTimeMillis()
                     )
-                    db.songDao().insert(song)
+                    db.trackDao().insertTrack(trackEntity)
                     tempFile.delete()
                     Result.success()
                 } else {
