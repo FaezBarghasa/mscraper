@@ -22,10 +22,12 @@ fn test_download_manager_calculate_missing_ranges() {
     });
 }
 
-#[test]
-fn test_mm_dlp_api_search_and_playlist() {
+#[tokio::test]
+async fn test_mm_dlp_api_search_and_playlist() {
     let api = MmDlpApi::new();
-    let search_res = api.search("Cyberpunk".to_string(), AudioSource::YouTubeMusic);
+    let search_res = api
+        .search("Cyberpunk".to_string(), AudioSource::YouTubeMusic)
+        .await;
     if let Ok(results) = search_res {
         for track in results {
             assert_eq!(track.source, AudioSource::YouTubeMusic);
@@ -71,16 +73,18 @@ async fn test_quic_client_init_webpki_roots() {
     );
 }
 
-#[test]
-fn test_download_track_audio_container() {
+#[tokio::test]
+async fn test_download_track_audio_container() {
     let api = MmDlpApi::new();
     let temp_dir = std::env::temp_dir();
-    let res = api.download_track(
-        "https://example.com/audio.mp3".to_string(),
-        AudioQuality::High,
-        AudioFormat::Mp3,
-        temp_dir.to_string_lossy().to_string(),
-    );
+    let res = api
+        .download_track(
+            "https://example.com/audio.mp3".to_string(),
+            AudioQuality::High,
+            AudioFormat::Mp3,
+            temp_dir.to_string_lossy().to_string(),
+        )
+        .await;
     if let Ok(file_path) = res {
         let path = std::path::Path::new(&file_path);
         if path.exists() {

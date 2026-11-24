@@ -82,9 +82,7 @@ fun DiscoveryScreen(
         isLoadingTrending = true
         try {
             val ffiApi = com.example.core.ffi.MmDlpApi()
-            val results = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                ffiApi.search("Trending Music Synthwave", com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC)
-            }
+            val results = ffiApi.search("Trending Music Synthwave", com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC)
             if (results.isNotEmpty()) {
                 trendingTracks = results.map { meta ->
                     Track(

@@ -5,14 +5,6 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::{Arc, LazyLock, RwLock};
 
-static RUNTIME: LazyLock<tokio::runtime::Runtime> = LazyLock::new(|| {
-    tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(2)
-        .enable_all()
-        .build()
-        .expect("Failed to initialize MmDlpApi Tokio Runtime")
-});
-
 static GLOBAL_QUIC_CLIENT: LazyLock<Arc<QuicClient>> = LazyLock::new(|| {
     Arc::new(QuicClient::new().expect("Failed to initialize persistent QuicClient"))
 });
@@ -108,77 +100,71 @@ impl MmDlpApi {
         }
     }
 
-    pub fn search(
+    pub async fn search(
         &self,
         query: String,
         source: AudioSource,
     ) -> Result<Vec<TrackMetadata>, EngineError> {
-        RUNTIME.block_on(async {
-            match source {
-                AudioSource::YouTubeMusic => {
-                    let extractor = YouTubeExtractor::new();
-                    extractor.search(&query).await
-                }
-                AudioSource::SoundCloud => {
-                    let extractor = SoundCloudExtractor::new();
-                    extractor.search(&query).await
-                }
-                AudioSource::Spotify => {
-                    // Route Spotify search queries via YouTube Music catalogue
-                    let extractor = YouTubeExtractor::new();
-                    extractor.search(&query).await
-                }
+        match source {
+            AudioSource::YouTubeMusic => {
+                let extractor = YouTubeExtractor::new();
+                extractor.search(&query).await
             }
-        })
+            AudioSource::SoundCloud => {
+                let extractor = SoundCloudExtractor::new();
+                extractor.search(&query).await
+            }
+            AudioSource::Spotify => {
+                // Route Spotify search queries via YouTube Music catalogue
+                let extractor = YouTubeExtractor::new();
+                extractor.search(&query).await
+            }
+        }
     }
 
-    pub fn get_stream_url(
+    pub async fn get_stream_url(
         &self,
         track_id: String,
         source: AudioSource,
     ) -> Result<String, EngineError> {
-        RUNTIME.block_on(async {
-            match source {
-                AudioSource::YouTubeMusic | AudioSource::Spotify => {
-                    let extractor = YouTubeExtractor::new();
-                    let (_meta, stream_url) = extractor.extract_video_info(&track_id).await?;
-                    Ok(stream_url)
-                }
-                AudioSource::SoundCloud => {
-                    let extractor = SoundCloudExtractor::new();
-                    extractor.get_stream_url(&track_id).await
-                }
-            }
-        })
-    }
-
-    pub fn extract_metadata(&self, url: String) -> Result<TrackMetadata, EngineError> {
-        RUNTIME.block_on(async {
-            if url.contains("soundcloud.com") {
-                let extractor = SoundCloudExtractor::new();
-                let results = extractor.search(&url).await?;
-                results.into_iter().next().ok_or_else(|| {
-                    EngineError::Extractor("No metadata found for SoundCloud track".to_string())
-                })
-            } else {
-                let video_id = if let Some(idx) = url.find("v=") {
-                    let rest = &url[idx + 2..];
-                    rest.split('&').next().unwrap_or(rest).to_string()
-                } else if let Some(idx) = url.find("youtu.be/") {
-                    let rest = &url[idx + 9..];
-                    rest.split('?').next().unwrap_or(rest).to_string()
-                } else {
-                    url.clone()
-                };
-
+        match source {
+            AudioSource::YouTubeMusic | AudioSource::Spotify => {
                 let extractor = YouTubeExtractor::new();
-                let (metadata, _stream) = extractor.extract_video_info(&video_id).await?;
-                Ok(metadata)
+                let (_meta, stream_url) = extractor.extract_video_info(&track_id).await?;
+                Ok(stream_url)
             }
-        })
+            AudioSource::SoundCloud => {
+                let extractor = SoundCloudExtractor::new();
+                extractor.get_stream_url(&track_id).await
+            }
+        }
     }
 
-    pub fn download_track(
+    pub async fn extract_metadata(&self, url: String) -> Result<TrackMetadata, EngineError> {
+        if url.contains("soundcloud.com") {
+            let extractor = SoundCloudExtractor::new();
+            let results = extractor.search(&url).await?;
+            results.into_iter().next().ok_or_else(|| {
+                EngineError::Extractor("No metadata found for SoundCloud track".to_string())
+            })
+        } else {
+            let video_id = if let Some(idx) = url.find("v=") {
+                let rest = &url[idx + 2..];
+                rest.split('&').next().unwrap_or(rest).to_string()
+            } else if let Some(idx) = url.find("youtu.be/") {
+                let rest = &url[idx + 9..];
+                rest.split('?').next().unwrap_or(rest).to_string()
+            } else {
+                url.clone()
+            };
+
+            let extractor = YouTubeExtractor::new();
+            let (metadata, _stream) = extractor.extract_video_info(&video_id).await?;
+            Ok(metadata)
+        }
+    }
+
+    pub async fn download_track(
         &self,
         url: String,
         _quality: AudioQuality,
@@ -204,34 +190,30 @@ impl MmDlpApi {
         let enable_quic = *self.quic_enabled.read().unwrap_or_else(|e| e.into_inner());
 
         // Resolve stream URL if input is a YouTube/SoundCloud webpage URL
-        let stream_url = RUNTIME.block_on(async {
-            if url.contains("youtube.com") || url.contains("youtu.be") {
-                let video_id = if let Some(idx) = url.find("v=") {
-                    let rest = &url[idx + 2..];
-                    rest.split('&').next().unwrap_or(rest).to_string()
-                } else if let Some(idx) = url.find("youtu.be/") {
-                    let rest = &url[idx + 9..];
-                    rest.split('?').next().unwrap_or(rest).to_string()
-                } else {
-                    url.clone()
-                };
-                let extractor = YouTubeExtractor::new();
-                extractor
-                    .extract_video_info(&video_id)
-                    .await
-                    .map(|(_meta, stream)| stream)
-                    .unwrap_or(url)
+        let stream_url = if url.contains("youtube.com") || url.contains("youtu.be") {
+            let video_id = if let Some(idx) = url.find("v=") {
+                let rest = &url[idx + 2..];
+                rest.split('&').next().unwrap_or(rest).to_string()
+            } else if let Some(idx) = url.find("youtu.be/") {
+                let rest = &url[idx + 9..];
+                rest.split('?').next().unwrap_or(rest).to_string()
             } else {
-                url
-            }
-        });
-
-        RUNTIME.block_on(async {
-            GLOBAL_QUIC_CLIENT
-                .stream_to_file(&stream_url, &file_path, enable_quic)
+                url.clone()
+            };
+            let extractor = YouTubeExtractor::new();
+            extractor
+                .extract_video_info(&video_id)
                 .await
-                .map_err(|e| EngineError::Network(format!("Failed to stream audio payload: {e}")))
-        })?;
+                .map(|(_meta, stream)| stream)
+                .unwrap_or(url)
+        } else {
+            url
+        };
+
+        GLOBAL_QUIC_CLIENT
+            .stream_to_file(&stream_url, &file_path, enable_quic)
+            .await
+            .map_err(|e| EngineError::Network(format!("Failed to stream audio payload: {e}")))?;
 
         Ok(file_path.to_string_lossy().to_string())
     }

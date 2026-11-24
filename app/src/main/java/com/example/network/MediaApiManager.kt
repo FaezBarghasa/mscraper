@@ -63,44 +63,36 @@ object MediaApiManager {
     val rydApi: ReturnYouTubeDislikeApi = rydRetrofit.create(ReturnYouTubeDislikeApi::class.java)
     private val ffiApi = MmDlpApi()
 
-    suspend fun searchMusic(query: String): List<com.example.model.Track> = withContext(Dispatchers.IO) {
-        try {
-            val results = ffiApi.search(query, AudioSource.YOU_TUBE_MUSIC)
-            results.map {
-                com.example.model.Track(
-                    id = it.trackId,
-                    title = it.title,
-                    artist = it.artist,
-                    duration = "3:30",
-                    imageUrl = it.albumArtUrl ?: "",
-                    filePath = ""
-                )
-            }
-        } catch (e: Exception) {
-            emptyList()
+    suspend fun searchMusic(query: String): List<com.example.model.Track> = try {
+        val results = ffiApi.search(query, AudioSource.YOU_TUBE_MUSIC)
+        results.map {
+            com.example.model.Track(
+                id = it.trackId,
+                title = it.title,
+                artist = it.artist,
+                duration = "3:30",
+                imageUrl = it.albumArtUrl ?: "",
+                filePath = ""
+            )
         }
+    } catch (e: Exception) {
+        emptyList()
     }
     
-    suspend fun getStreamUrl(videoId: String): String? = withContext(Dispatchers.IO) {
-        try {
-            ffiApi.getStreamUrl(videoId, AudioSource.YOU_TUBE_MUSIC)
-        } catch (e: Exception) {
-            null
-        }
+    suspend fun getStreamUrl(videoId: String): String? = try {
+        ffiApi.getStreamUrl(videoId, AudioSource.YOU_TUBE_MUSIC)
+    } catch (e: Exception) {
+        null
     }
 
-    suspend fun getSuggestions(query: String): List<String> = withContext(Dispatchers.IO) {
-        try {
-            val results = ffiApi.search(query, AudioSource.YOU_TUBE_MUSIC)
-            results.take(10).map { "${it.title} - ${it.artist}" }
-        } catch (e: Exception) {
-            emptyList()
-        }
+    suspend fun getSuggestions(query: String): List<String> = try {
+        val results = ffiApi.search(query, AudioSource.YOU_TUBE_MUSIC)
+        results.take(10).map { "${it.title} - ${it.artist}" }
+    } catch (e: Exception) {
+        emptyList()
     }
 
-    suspend fun getTrending(): List<com.example.model.Track> = withContext(Dispatchers.IO) {
-        searchMusic("Trending Music")
-    }
+    suspend fun getTrending(): List<com.example.model.Track> = searchMusic("Trending Music")
 
     suspend fun getSponsorSegments(videoId: String): List<SponsorSegment> {
         return try {

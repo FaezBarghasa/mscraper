@@ -17,7 +17,7 @@ sealed class DownloadEvent {
 class MmDlpBridge(
     private val api: MmDlpApi = MmDlpApi()
 ) {
-    fun extractMetadata(url: String): TrackMetadata {
+    suspend fun extractMetadata(url: String): TrackMetadata {
         return api.extractMetadata(url)
     }
 

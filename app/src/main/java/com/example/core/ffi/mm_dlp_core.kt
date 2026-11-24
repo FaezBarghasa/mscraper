@@ -31,6 +31,13 @@ import java.nio.charset.CodingErrorAction
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.resume
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 // This is a helper for safely working with byte buffers returned from the Rust code.
 // A rust-owned buffer is represented by its capacity, its current length, and a
@@ -678,20 +685,20 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_mm_dlp_core_fn_constructor_mmdlpapi_new(uniffi_out_err: UniffiRustCallStatus, 
     ): Long
-    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_download_track(`ptr`: Long,`url`: RustBuffer.ByValue,`quality`: RustBuffer.ByValue,`format`: RustBuffer.ByValue,`tempDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_download_track(`ptr`: Long,`url`: RustBuffer.ByValue,`quality`: RustBuffer.ByValue,`format`: RustBuffer.ByValue,`tempDir`: RustBuffer.ByValue,
+    ): Long
     external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_export_playlist_json(`ptr`: Long,`playlist`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_export_playlist_xml(`ptr`: Long,`playlist`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_extract_metadata(`ptr`: Long,`url`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_get_stream_url(`ptr`: Long,`trackId`: RustBuffer.ByValue,`source`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_extract_metadata(`ptr`: Long,`url`: RustBuffer.ByValue,
+    ): Long
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_get_stream_url(`ptr`: Long,`trackId`: RustBuffer.ByValue,`source`: RustBuffer.ByValue,
+    ): Long
     external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_import_playlist_json(`ptr`: Long,`json`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_search(`ptr`: Long,`query`: RustBuffer.ByValue,`source`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_search(`ptr`: Long,`query`: RustBuffer.ByValue,`source`: RustBuffer.ByValue,
+    ): Long
     external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_set_network_config(`ptr`: Long,`enableQuic`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun ffi_mm_dlp_core_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -813,7 +820,7 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
 }
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
-    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_download_track() != 17167) {
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_download_track() != 5574) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_export_playlist_json() != 27077) {
@@ -822,16 +829,16 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_export_playlist_xml() != 34211) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_extract_metadata() != 18899) {
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_extract_metadata() != 4439) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_get_stream_url() != 51976) {
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_get_stream_url() != 23020) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_import_playlist_json() != 21744) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_search() != 55089) {
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_search() != 16247) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_set_network_config() != 22042) {
@@ -853,6 +860,46 @@ public fun uniffiEnsureInitialized() {
 }
 
 // Async support
+// Async return type handlers
+
+internal const val UNIFFI_RUST_FUTURE_POLL_READY = 0.toByte()
+internal const val UNIFFI_RUST_FUTURE_POLL_WAKE = 1.toByte()
+
+internal val uniffiContinuationHandleMap = UniffiHandleMap<CancellableContinuation<Byte>>()
+
+// FFI type for Rust future continuations
+internal object uniffiRustFutureContinuationCallbackImpl: UniffiRustFutureContinuationCallback {
+    override fun callback(data: Long, pollResult: Byte) {
+        uniffiContinuationHandleMap.remove(data).resume(pollResult)
+    }
+}
+
+internal suspend fun<T, F, E: kotlin.Exception> uniffiRustCallAsync(
+    rustFuture: Long,
+    pollFunc: (Long, UniffiRustFutureContinuationCallback, Long) -> Unit,
+    completeFunc: (Long, UniffiRustCallStatus) -> F,
+    freeFunc: (Long) -> Unit,
+    liftFunc: (F) -> T,
+    errorHandler: UniffiRustCallStatusErrorHandler<E>
+): T {
+    try {
+        do {
+            val pollResult = suspendCancellableCoroutine<Byte> { continuation ->
+                pollFunc(
+                    rustFuture,
+                    uniffiRustFutureContinuationCallbackImpl,
+                    uniffiContinuationHandleMap.insert(continuation)
+                )
+            }
+        } while (pollResult != UNIFFI_RUST_FUTURE_POLL_READY);
+
+        return liftFunc(
+            uniffiRustCallWithError(errorHandler, { status -> completeFunc(rustFuture, status) })
+        )
+    } finally {
+        freeFunc(rustFuture)
+    }
+}
 
 // Public interface members begin here.
 
@@ -1198,19 +1245,19 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
 
 public interface MmDlpApiInterface {
     
-    fun `downloadTrack`(`url`: kotlin.String, `quality`: AudioQuality, `format`: AudioFormat, `tempDir`: kotlin.String): kotlin.String
+    suspend fun `downloadTrack`(`url`: kotlin.String, `quality`: AudioQuality, `format`: AudioFormat, `tempDir`: kotlin.String): kotlin.String
     
     fun `exportPlaylistJson`(`playlist`: Playlist): kotlin.String
     
     fun `exportPlaylistXml`(`playlist`: Playlist): kotlin.String
     
-    fun `extractMetadata`(`url`: kotlin.String): TrackMetadata
+    suspend fun `extractMetadata`(`url`: kotlin.String): TrackMetadata
     
-    fun `getStreamUrl`(`trackId`: kotlin.String, `source`: AudioSource): kotlin.String
+    suspend fun `getStreamUrl`(`trackId`: kotlin.String, `source`: AudioSource): kotlin.String
     
     fun `importPlaylistJson`(`json`: kotlin.String): Playlist
     
-    fun `search`(`query`: kotlin.String, `source`: AudioSource): List<TrackMetadata>
+    suspend fun `search`(`query`: kotlin.String, `source`: AudioSource): List<TrackMetadata>
     
     fun `setNetworkConfig`(`enableQuic`: kotlin.Boolean)
     
@@ -1322,18 +1369,25 @@ open class MmDlpApi: Disposable, AutoCloseable, MmDlpApiInterface
     }
 
     
-    @Throws(EngineException::class)override fun `downloadTrack`(`url`: kotlin.String, `quality`: AudioQuality, `format`: AudioFormat, `tempDir`: kotlin.String): kotlin.String {
-            return FfiConverterString.lift(
-    callWithHandle {
-    uniffiRustCallWithError(EngineException) { _status ->
-    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_download_track(
-        it,
-        FfiConverterString.lower(`url`),FfiConverterTypeAudioQuality.lower(`quality`),FfiConverterTypeAudioFormat.lower(`format`),FfiConverterString.lower(`tempDir`),_status)
-}
-    }
+    @Throws(EngineException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `downloadTrack`(`url`: kotlin.String, `quality`: AudioQuality, `format`: AudioFormat, `tempDir`: kotlin.String) : kotlin.String {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_download_track(
+                uniffiHandle,
+                FfiConverterString.lower(`url`),FfiConverterTypeAudioQuality.lower(`quality`),FfiConverterTypeAudioFormat.lower(`format`),FfiConverterString.lower(`tempDir`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_poll_rust_buffer(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_complete_rust_buffer(future, continuation) },
+        { future -> UniffiLib.ffi_mm_dlp_core_rust_future_free_rust_buffer(future) },
+        // lift function
+        { FfiConverterString.lift(it) },
+        // Error FFI converter
+        EngineException.ErrorHandler,
     )
     }
-    
 
     
     @Throws(EngineException::class)override fun `exportPlaylistJson`(`playlist`: Playlist): kotlin.String {
@@ -1364,32 +1418,46 @@ open class MmDlpApi: Disposable, AutoCloseable, MmDlpApiInterface
     
 
     
-    @Throws(EngineException::class)override fun `extractMetadata`(`url`: kotlin.String): TrackMetadata {
-            return FfiConverterTypeTrackMetadata.lift(
-    callWithHandle {
-    uniffiRustCallWithError(EngineException) { _status ->
-    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_extract_metadata(
-        it,
-        FfiConverterString.lower(`url`),_status)
-}
-    }
+    @Throws(EngineException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `extractMetadata`(`url`: kotlin.String) : TrackMetadata {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_extract_metadata(
+                uniffiHandle,
+                FfiConverterString.lower(`url`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_poll_rust_buffer(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_complete_rust_buffer(future, continuation) },
+        { future -> UniffiLib.ffi_mm_dlp_core_rust_future_free_rust_buffer(future) },
+        // lift function
+        { FfiConverterTypeTrackMetadata.lift(it) },
+        // Error FFI converter
+        EngineException.ErrorHandler,
     )
     }
-    
 
     
-    @Throws(EngineException::class)override fun `getStreamUrl`(`trackId`: kotlin.String, `source`: AudioSource): kotlin.String {
-            return FfiConverterString.lift(
-    callWithHandle {
-    uniffiRustCallWithError(EngineException) { _status ->
-    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_get_stream_url(
-        it,
-        FfiConverterString.lower(`trackId`),FfiConverterTypeAudioSource.lower(`source`),_status)
-}
-    }
+    @Throws(EngineException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `getStreamUrl`(`trackId`: kotlin.String, `source`: AudioSource) : kotlin.String {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_get_stream_url(
+                uniffiHandle,
+                FfiConverterString.lower(`trackId`),FfiConverterTypeAudioSource.lower(`source`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_poll_rust_buffer(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_complete_rust_buffer(future, continuation) },
+        { future -> UniffiLib.ffi_mm_dlp_core_rust_future_free_rust_buffer(future) },
+        // lift function
+        { FfiConverterString.lift(it) },
+        // Error FFI converter
+        EngineException.ErrorHandler,
     )
     }
-    
 
     
     @Throws(EngineException::class)override fun `importPlaylistJson`(`json`: kotlin.String): Playlist {
@@ -1406,18 +1474,25 @@ open class MmDlpApi: Disposable, AutoCloseable, MmDlpApiInterface
     
 
     
-    @Throws(EngineException::class)override fun `search`(`query`: kotlin.String, `source`: AudioSource): List<TrackMetadata> {
-            return FfiConverterSequenceTypeTrackMetadata.lift(
-    callWithHandle {
-    uniffiRustCallWithError(EngineException) { _status ->
-    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_search(
-        it,
-        FfiConverterString.lower(`query`),FfiConverterTypeAudioSource.lower(`source`),_status)
-}
-    }
+    @Throws(EngineException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `search`(`query`: kotlin.String, `source`: AudioSource) : List<TrackMetadata> {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_search(
+                uniffiHandle,
+                FfiConverterString.lower(`query`),FfiConverterTypeAudioSource.lower(`source`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_poll_rust_buffer(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_complete_rust_buffer(future, continuation) },
+        { future -> UniffiLib.ffi_mm_dlp_core_rust_future_free_rust_buffer(future) },
+        // lift function
+        { FfiConverterSequenceTypeTrackMetadata.lift(it) },
+        // Error FFI converter
+        EngineException.ErrorHandler,
     )
     }
-    
 
     override fun `setNetworkConfig`(`enableQuic`: kotlin.Boolean)
         = 
@@ -1977,4 +2052,12 @@ public object FfiConverterSequenceTypeTrackMetadata: FfiConverterRustBuffer<List
         }
     }
 }
+
+
+
+
+
+
+
+
 
