@@ -26,9 +26,11 @@ impl QuicClient {
 
         let client_config = ClientConfig::new(Arc::new(quic_crypto));
 
-        let bind_addr = "[::]:0".parse().map_err(|e| MediaError::TaggingError(format!("{e}")))?;
-        let mut endpoint = Endpoint::client(bind_addr)
-            .map_err(|e| MediaError::TaggingError(e.to_string()))?;
+        let bind_addr = "[::]:0"
+            .parse()
+            .map_err(|e| MediaError::TaggingError(format!("{e}")))?;
+        let mut endpoint =
+            Endpoint::client(bind_addr).map_err(|e| MediaError::TaggingError(e.to_string()))?;
 
         endpoint.set_default_client_config(client_config.clone());
 

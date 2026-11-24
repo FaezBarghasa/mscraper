@@ -86,7 +86,11 @@ impl MmDlpApi {
         }
     }
 
-    pub fn search(&self, query: String, source: AudioSource) -> Result<Vec<TrackMetadata>, EngineError> {
+    pub fn search(
+        &self,
+        query: String,
+        source: AudioSource,
+    ) -> Result<Vec<TrackMetadata>, EngineError> {
         let prefix = match source {
             AudioSource::YouTubeMusic => "YT",
             AudioSource::SoundCloud => "SC",
@@ -125,12 +129,19 @@ impl MmDlpApi {
             AudioFormat::Mp3 => "mp3",
         };
 
-        let file_name = format!("track_{}.{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0), ext);
+        let file_name = format!(
+            "track_{}.{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_millis())
+                .unwrap_or(0),
+            ext
+        );
         let file_path = PathBuf::from(temp_dir).join(&file_name);
 
         // Try downloading through QUIC client if network accessible, fallback to structured audio container
         let enable_quic = *self.quic_enabled.read().unwrap_or_else(|e| e.into_inner());
-        
+
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -152,8 +163,7 @@ impl MmDlpApi {
             buf
         });
 
-        std::fs::write(&file_path, data)
-            .map_err(|e| EngineError::Io(e.to_string()))?;
+        std::fs::write(&file_path, data).map_err(|e| EngineError::Io(e.to_string()))?;
 
         Ok(file_path.to_string_lossy().to_string())
     }
@@ -182,8 +192,7 @@ impl MmDlpApi {
     }
 
     pub fn import_playlist_json(&self, json: String) -> Result<Playlist, EngineError> {
-        serde_json::from_str(&json)
-            .map_err(|e| EngineError::Serialization(e.to_string()))
+        serde_json::from_str(&json).map_err(|e| EngineError::Serialization(e.to_string()))
     }
 }
 

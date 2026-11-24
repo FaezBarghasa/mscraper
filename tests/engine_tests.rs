@@ -9,7 +9,10 @@ fn test_download_manager_calculate_missing_ranges() {
         let temp_dir = std::env::temp_dir().join("test_download_manager");
         let _ = std::fs::create_dir_all(&temp_dir);
         let manager = DownloadManager::new(&temp_dir);
-        let ranges = manager.calculate_missing_ranges("test_file_ranges", 1000, 4).await.unwrap();
+        let ranges = manager
+            .calculate_missing_ranges("test_file_ranges", 1000, 4)
+            .await
+            .unwrap();
         assert_eq!(ranges.len(), 4);
         assert_eq!(ranges[0], (0, 249));
         assert_eq!(ranges[1], (250, 499));
@@ -22,7 +25,9 @@ fn test_download_manager_calculate_missing_ranges() {
 #[test]
 fn test_mm_dlp_api_search_and_playlist() {
     let api = MmDlpApi::new();
-    let results = api.search("Cyberpunk".to_string(), AudioSource::YouTubeMusic).unwrap();
+    let results = api
+        .search("Cyberpunk".to_string(), AudioSource::YouTubeMusic)
+        .unwrap();
     assert_eq!(results.len(), 2);
     assert_eq!(results[0].source, AudioSource::YouTubeMusic);
 
@@ -58,19 +63,25 @@ fn test_mm_dlp_api_search_and_playlist() {
 #[tokio::test]
 async fn test_quic_client_init_webpki_roots() {
     let client = QuicClient::new();
-    assert!(client.is_ok(), "QuicClient::new failed with: {:?}", client.err());
+    assert!(
+        client.is_ok(),
+        "QuicClient::new failed with: {:?}",
+        client.err()
+    );
 }
 
 #[test]
 fn test_download_track_audio_container() {
     let api = MmDlpApi::new();
     let temp_dir = std::env::temp_dir();
-    let file_path = api.download_track(
-        "https://example.com/audio.mp3".to_string(),
-        AudioQuality::High,
-        AudioFormat::Mp3,
-        temp_dir.to_string_lossy().to_string(),
-    ).unwrap();
+    let file_path = api
+        .download_track(
+            "https://example.com/audio.mp3".to_string(),
+            AudioQuality::High,
+            AudioFormat::Mp3,
+            temp_dir.to_string_lossy().to_string(),
+        )
+        .unwrap();
     let path = std::path::Path::new(&file_path);
     assert!(path.exists());
     let metadata = std::fs::metadata(path).unwrap();
