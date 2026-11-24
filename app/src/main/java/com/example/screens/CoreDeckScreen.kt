@@ -925,8 +925,10 @@ fun UtilitiesTab(viewModel: MusicViewModel, accentColor: Color, secColor: Color)
 
                     Button(
                         onClick = {
-                            val backup = viewModel.backupSyncService.createLocalBackup()
-                            Toast.makeText(context, backup, Toast.LENGTH_LONG).show()
+                            scope.launch {
+                                val backup = viewModel.backupSyncService.createLocalBackup()
+                                Toast.makeText(context, backup, Toast.LENGTH_LONG).show()
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = HoloBg),
                         modifier = Modifier.fillMaxWidth(),

@@ -1,17 +1,19 @@
 package com.example.core
 
+import android.content.Context
+import android.media.MediaMetadataRetriever
 import com.example.db.TrackDao
 import com.example.model.TrackEntity
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import java.io.File
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicInteger
 
 class LibraryScanner(
-    private val trackDao: TrackDao
+    private val trackDao: TrackDao,
+    private val context: Context? = null
 ) {
 
     private val _isScanning = MutableStateFlow(false)
@@ -23,81 +25,116 @@ class LibraryScanner(
     private val _scannedFileCount = MutableStateFlow(0)
     val scannedFileCount: StateFlow<Int> = _scannedFileCount.asStateFlow()
 
+    private val audioExtensions = setOf("mp3", "flac", "wav", "m4a", "ogg", "aac", "opus")
+
     /**
-     * Scan directory in parallel using Kotlin's multi-threaded Dispatchers.IO.
-     * Concurrently indexes discovered tracks into local Room database AND SurrealDB.
+     * Recursively scan directory on disk and index discovered audio files into Room database.
      */
     suspend fun scanDirectory(virtualPath: String): Int = withContext(Dispatchers.IO) {
         _isScanning.value = true
         _scanProgress.value = 0f
         _scannedFileCount.value = 0
 
-        val mockMediaFiles = listOf(
-            Pair("Midnight City", "M83"),
-            Pair("Nightcall", "Kavinsky"),
-            Pair("Tech Noir", "Gunship"),
-            Pair("Shadow Fury", "Laserhawk"),
-            Pair("Rage Center", "Revenant"),
-            Pair("Sunset Coast", "The Midnight"),
-            Pair("Chronos", "FM-84"),
-            Pair("Dark All Day", "Gunship")
-        )
-
-                val newlyAddedCount = AtomicInteger(0)
-        val completedCount = AtomicInteger(0)
-        val totalFiles = mockMediaFiles.size
-        
-        // Thread-safe collection for batching SurrealDB indexing writes
-        val tracksToBatch = java.util.Collections.synchronizedList(mutableListOf<TrackEntity>())
-
-        // Parallel processing of media files using coroutineScope and async
-        coroutineScope {
-            val jobs = mockMediaFiles.mapIndexed { index, file ->
-                async(Dispatchers.IO) {
-                    // Simulate variable processing latency concurrently
-                    delay((200..600).random().toLong())
-
-                    val finalId = "scanned_${file.first.lowercase().replace(" ", "_")}"
-                    val existing = trackDao.getTrackById(finalId)
-
-                    if (existing == null) {
-                        val ext = TrackEntity(
-                            id = finalId,
-                            title = file.first,
-                            artist = file.second,
-                            album = "Scanned Archives",
-                            albumArtist = file.second,
-                            genre = "SYNTHWAVE",
-                            year = 2026,
-                            trackNumber = index + 1,
-                            discNumber = 1,
-                            duration = 240 + (index * 12),
-                            bitrate = 320,
-                            sampleRate = 44100,
-                            format = "MP3",
-                            filePath = "$virtualPath/${file.first}.mp3",
-                            fileSize = 8592100L,
-                            artworkPath = "https://lh3.googleusercontent.com/aida-public/AB6AXuBBEtoMVVFUzB83CnpCLLYXTr43Jig9eeoY-9-mPD-JxbAFK34_ATCUc-1yMgJk0CSHXUbMw7wEcGYUHVOgr6x4q10vVLSsJPX9-g3YzexBw7hxISrHeBcsDPd1RRluwrBqF044Dd3ntM2DQz-0U3QO6qC4eaUe10I2jSIpcNeHwxGF6-Yhb-7XDr1Ed-s5--_FD_0a__7ifb4E5BUJopP74LoSpUPlyXIN8koLo3k0LsBqbIagsysNnzGiaUqrjhSYvD28hsmYoqNs",
-                            dateAdded = System.currentTimeMillis()
-                        )
-
-                        // Local Room DB indexing
-                        trackDao.insertTrack(ext)
-
-                        newlyAddedCount.incrementAndGet()
-                    }
-
-                    // Increment progress indicator in thread-safe manner
-                    val currentDone = completedCount.incrementAndGet()
-                    _scannedFileCount.value = currentDone
-                    _scanProgress.value = currentDone.toFloat() / totalFiles
-                }
-            }
-            jobs.awaitAll()
+        val targetDir = File(virtualPath)
+        if (!targetDir.exists() || !targetDir.isDirectory) {
+            _isScanning.value = false
+            _scanProgress.value = 1f
+            return@withContext 0
         }
 
-        _isScanning.value = false
-        _scanProgress.value = 1.0f
-        newlyAddedCount.get()
+        val audioFiles = mutableListOf<File>()
+        targetDir.walkTopDown().forEach { file ->
+            if (file.isFile && file.extension.lowercase() in audioExtensions) {
+                audioFiles.add(file)
+            }
+        }
+
+        val totalFiles = audioFiles.size
+        if (totalFiles == 0) {
+            _isScanning.value = false
+            _scanProgress.value = 1f
+            return@withContext 0
+        }
+
+        var newlyAdded = 0
+        val retriever = MediaMetadataRetriever()
+
+        try {
+            audioFiles.forEachIndexed { index, file ->
+                val finalId = "local_${file.absolutePath.hashCode()}_${file.length()}"
+                val existing = trackDao.getTrackById(finalId)
+
+                if (existing == null) {
+                    var title = file.nameWithoutExtension
+                    var artist = "Unknown Artist"
+                    var album = "Local Storage"
+                    var durationSecs = 0
+                    var bitrate = 320
+                    var year: Int? = null
+                    var genre: String? = null
+
+                    try {
+                        retriever.setDataSource(file.absolutePath)
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)?.let {
+                            if (it.isNotBlank()) title = it
+                        }
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)?.let {
+                            if (it.isNotBlank()) artist = it
+                        }
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)?.let {
+                            if (it.isNotBlank()) album = it
+                        }
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()?.let {
+                            durationSecs = (it / 1000).toInt()
+                        }
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toIntOrNull()?.let {
+                            bitrate = it / 1000
+                        }
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR)?.toIntOrNull()?.let {
+                            year = it
+                        }
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE)?.let {
+                            if (it.isNotBlank()) genre = it
+                        }
+                    } catch (_: Exception) {
+                        // Fall back to filename defaults on metadata read error
+                    }
+
+                    val ext = TrackEntity(
+                        id = finalId,
+                        title = title,
+                        artist = artist,
+                        album = album,
+                        albumArtist = artist,
+                        genre = genre,
+                        year = year,
+                        trackNumber = null,
+                        discNumber = null,
+                        duration = durationSecs,
+                        bitrate = bitrate,
+                        sampleRate = 44100,
+                        format = file.extension.uppercase(),
+                        filePath = file.absolutePath,
+                        fileSize = file.length(),
+                        artworkPath = null,
+                        dateAdded = System.currentTimeMillis()
+                    )
+
+                    trackDao.insertTrack(ext)
+                    newlyAdded++
+                }
+
+                _scannedFileCount.value = index + 1
+                _scanProgress.value = (index + 1).toFloat() / totalFiles
+            }
+        } finally {
+            try {
+                retriever.release()
+            } catch (_: Exception) {}
+            _isScanning.value = false
+            _scanProgress.value = 1.0f
+        }
+
+        newlyAdded
     }
 }

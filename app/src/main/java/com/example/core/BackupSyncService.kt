@@ -6,6 +6,7 @@ import com.example.db.AppDatabase
 import com.example.model.FavoriteTrack
 import com.example.model.PlaylistEntity
 import com.example.model.PlaylistTrackEntity
+import com.example.model.TrackEntity
 import com.example.viewmodel.MusicViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -14,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -21,6 +23,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 class BackupSyncService(private val context: Context) {
@@ -61,38 +64,179 @@ class BackupSyncService(private val context: Context) {
     }
 
     // Local Backup (Task 6.1)
-    fun createLocalBackup(): String {
+    suspend fun createLocalBackup(): String = withContext(Dispatchers.IO) {
         val timestamp = System.currentTimeMillis()
-        val backupName = "M-scraper_Backup_$timestamp.db.json"
-        return "BACKUP CREATED SUCCESSFULLY: $backupName\nLocation: /storage/emulated/0/M-scraper/backups/$backupName"
-    }
+        val backupDir = File(context.getExternalFilesDir(null) ?: context.filesDir, "backups")
+        if (!backupDir.exists()) {
+            backupDir.mkdirs()
+        }
+        val backupFile = File(backupDir, "mscraper_backup_$timestamp.json")
 
-    fun restoreLocalBackup(backupPath: String): Boolean {
-        return backupPath.isNotEmpty()
-    }
+        val localDb = AppDatabase.getDatabase(context)
+        val tracks = localDb.trackDao().getAllTracks().first()
+        val favorites = localDb.favoriteTrackDao().getFavoritesList()
+        val playlists = localDb.playlistDao().getPlaylistsList()
+        val playlistTracks = localDb.playlistTrackDao().getAllPlaylistTracks()
 
-    // Standard Cloud Sync mock fallback
-    suspend fun syncWithCloud(provider: String): Boolean {
-        _isSyncing.value = true
-        _syncProgress.value = 0f
-        
-        val stages = listOf(
-            "CONNECTING TO $provider...",
-            "AUTHENTICATING PROTOCOLS...",
-            "ENCRYPTING SIGNAL METADATA...",
-            "UPLOADING DATA PACKETS...",
-            "VERIFYING CHECKSUM HASHES...",
-            "SYNC COMPLETED SUCCESSFULLY."
-        )
+        val rootObj = JSONObject().apply {
+            put("version", 1)
+            put("timestamp", timestamp)
 
-        for (i in stages.indices) {
-            _syncStatus.value = stages[i]
-            _syncProgress.value = (i + 1).toFloat() / stages.size
-            delay(500) 
+            val tracksArr = JSONArray()
+            tracks.forEach { t ->
+                tracksArr.put(JSONObject().apply {
+                    put("id", t.id)
+                    put("title", t.title)
+                    put("artist", t.artist ?: "")
+                    put("album", t.album ?: "")
+                    put("duration", t.duration)
+                    put("bitrate", t.bitrate)
+                    put("format", t.format)
+                    put("filePath", t.filePath)
+                    put("fileSize", t.fileSize)
+                    put("artworkPath", t.artworkPath ?: "")
+                    put("isFavorite", t.isFavorite)
+                    put("playCount", t.playCount)
+                })
+            }
+            put("tracks", tracksArr)
+
+            val favArr = JSONArray()
+            favorites.forEach { f ->
+                favArr.put(JSONObject().apply {
+                    put("id", f.id)
+                    put("title", f.title)
+                    put("artist", f.artist)
+                    put("duration", f.duration)
+                    put("imageUrl", f.imageUrl)
+                })
+            }
+            put("favorites", favArr)
+
+            val plArr = JSONArray()
+            playlists.forEach { p ->
+                plArr.put(JSONObject().apply {
+                    put("id", p.id)
+                    put("name", p.name)
+                    put("description", p.description ?: "")
+                    put("isSmart", p.isSmart)
+                })
+            }
+            put("playlists", plArr)
+
+            val ptArr = JSONArray()
+            playlistTracks.forEach { pt ->
+                ptArr.put(JSONObject().apply {
+                    put("playlistId", pt.playlistId)
+                    put("trackId", pt.trackId)
+                    put("position", pt.position)
+                })
+            }
+            put("playlistTracks", ptArr)
         }
 
-        _isSyncing.value = false
-        return true
+        backupFile.writeText(rootObj.toString(2))
+        "BACKUP CREATED SUCCESSFULLY: ${backupFile.name}\nLocation: ${backupFile.absolutePath}"
+    }
+
+    suspend fun restoreLocalBackup(backupPath: String): Boolean = withContext(Dispatchers.IO) {
+        val file = File(backupPath)
+        if (!file.exists()) return@withContext false
+
+        try {
+            val content = file.readText()
+            val root = JSONObject(content)
+            val localDb = AppDatabase.getDatabase(context)
+
+            if (root.has("tracks")) {
+                val tracksArr = root.getJSONArray("tracks")
+                for (i in 0 until tracksArr.length()) {
+                    val obj = tracksArr.getJSONObject(i)
+                    val track = TrackEntity(
+                        id = obj.getString("id"),
+                        title = obj.getString("title"),
+                        artist = obj.optString("artist").takeIf { it.isNotBlank() },
+                        album = obj.optString("album").takeIf { it.isNotBlank() },
+                        albumArtist = obj.optString("artist").takeIf { it.isNotBlank() },
+                        genre = null,
+                        year = null,
+                        trackNumber = null,
+                        discNumber = null,
+                        duration = obj.optInt("duration", 0),
+                        bitrate = obj.optInt("bitrate", 320),
+                        sampleRate = 44100,
+                        format = obj.optString("format", "MP3"),
+                        filePath = obj.getString("filePath"),
+                        fileSize = obj.optLong("fileSize", 0L),
+                        artworkPath = obj.optString("artworkPath").takeIf { it.isNotBlank() },
+                        isFavorite = obj.optBoolean("isFavorite", false),
+                        playCount = obj.optInt("playCount", 0),
+                        dateAdded = System.currentTimeMillis()
+                    )
+                    localDb.trackDao().insertTrack(track)
+                }
+            }
+
+            if (root.has("favorites")) {
+                val favArr = root.getJSONArray("favorites")
+                for (i in 0 until favArr.length()) {
+                    val obj = favArr.getJSONObject(i)
+                    val fav = FavoriteTrack(
+                        id = obj.getString("id"),
+                        title = obj.getString("title"),
+                        artist = obj.getString("artist"),
+                        duration = obj.getString("duration"),
+                        imageUrl = obj.getString("imageUrl")
+                    )
+                    localDb.favoriteTrackDao().insertFavorite(fav)
+                }
+            }
+
+            if (root.has("playlists")) {
+                val plArr = root.getJSONArray("playlists")
+                for (i in 0 until plArr.length()) {
+                    val obj = plArr.getJSONObject(i)
+                    val pl = PlaylistEntity(
+                        id = obj.getString("id"),
+                        name = obj.getString("name"),
+                        description = obj.optString("description").takeIf { it.isNotBlank() },
+                        isSmart = obj.optBoolean("isSmart", false)
+                    )
+                    localDb.playlistDao().insertPlaylist(pl)
+                }
+            }
+
+            if (root.has("playlistTracks")) {
+                val ptArr = root.getJSONArray("playlistTracks")
+                for (i in 0 until ptArr.length()) {
+                    val obj = ptArr.getJSONObject(i)
+                    val pt = PlaylistTrackEntity(
+                        playlistId = obj.getString("playlistId"),
+                        trackId = obj.getString("trackId"),
+                        position = obj.optInt("position", i)
+                    )
+                    localDb.playlistTrackDao().insertPlaylistTrack(pt)
+                }
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    suspend fun syncWithCloud(provider: String, viewModel: MusicViewModel? = null): Boolean = withContext(Dispatchers.IO) {
+        val endpoint = getSurrealEndpoint()
+        val ns = getSurrealNamespace()
+        val db = getSurrealDatabase()
+        val user = getSurrealUsername()
+        val pass = getSurrealPassword()
+
+        if (viewModel != null) {
+            val result = syncToSurreal(endpoint, ns, db, user, pass, viewModel)
+            result.isSuccess
+        } else {
+            true
+        }
     }
 
     // Core execution function for SurrealDB REST SQL Endpoint

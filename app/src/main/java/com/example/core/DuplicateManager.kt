@@ -2,8 +2,11 @@ package com.example.core
 
 import com.example.db.TrackDao
 import com.example.model.TrackEntity
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileInputStream
+import java.security.MessageDigest
 
 data class DuplicateGroup(
     val title: String,
@@ -13,13 +16,38 @@ data class DuplicateGroup(
 
 class DuplicateManager(private val trackDao: TrackDao) {
 
+    /**
+     * Compute SHA-256 hash for local physical files.
+     * Falls back to metadata signature if file does not exist locally (e.g. streaming URI).
+     */
+    private fun computeFileSha256(filePath: String): String? {
+        val file = File(filePath)
+        if (!file.exists() || !file.isFile || file.length() == 0L) return null
+        return try {
+            val digest = MessageDigest.getInstance("SHA-256")
+            val buffer = ByteArray(64 * 1024)
+            FileInputStream(file).use { input ->
+                var read: Int
+                while (input.read(buffer).also { read = it } != -1) {
+                    digest.update(buffer, 0, read)
+                }
+            }
+            digest.digest().joinToString("") { "%02x".format(it) }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     fun detectDuplicates(allTracks: List<TrackEntity>, useContentHash: Boolean): List<DuplicateGroup> {
         val grouped = if (useContentHash) {
-            // Group by simulated content hash (same file size and artist)
-            allTracks.groupBy { "${it.fileSize}_${it.artist}" }
+            // Group by actual file SHA-256 hash if available, or exact fileSize + duration + title + artist
+            allTracks.groupBy { track ->
+                computeFileSha256(track.filePath)
+                    ?: "meta_${track.fileSize}_${track.duration}_${track.title.lowercase().trim()}_${track.artist?.lowercase()?.trim()}"
+            }
         } else {
-            // Group by standard metadata (same lowercase title and artist)
-            allTracks.groupBy { "${it.title.lowercase().trim()}_${it.artist?.lowercase()?.trim()}" }
+            // Group by standard metadata (exact lowercase title, artist, and duration)
+            allTracks.groupBy { "${it.title.lowercase().trim()}_${it.artist?.lowercase()?.trim()}_${it.duration}" }
         }
 
         return grouped.values
@@ -36,7 +64,7 @@ class DuplicateManager(private val trackDao: TrackDao) {
 
     suspend fun resolveDuplicates(group: DuplicateGroup, strategy: String) = withContext(Dispatchers.IO) {
         if (group.tracks.size <= 1) return@withContext
-        
+
         val trackToKeep = when (strategy) {
             "OLDEST" -> group.tracks.minByOrNull { it.dateAdded }
             "NEWEST" -> group.tracks.maxByOrNull { it.dateAdded }
