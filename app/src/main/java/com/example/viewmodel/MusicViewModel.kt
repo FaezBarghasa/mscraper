@@ -92,20 +92,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     val favoriteTracks: StateFlow<List<FavoriteTrack>> = favoriteDao.getAllFavorites()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Cloud Streamed Data Simulation
-    private val cloudTracks = listOf(
-        TrackEntity(id = "cloud_1", title = "Neon Nights", artist = "The Midnight", album = "Endless Summer", albumArtist = "The Midnight", genre = "SYNTHWAVE", year = 2016, trackNumber = 1, discNumber = 1, duration = 255, bitrate = 320, sampleRate = 44100, format = "mp3", filePath = "https://example.com/neon_nights", fileSize = 5000000L, artworkPath = "https://lh3.googleusercontent.com/aida-public/AB6AXuDqdCMr_-ekSmUoVVPk1cHSB1ll6kp_NQLJFI7kiw_IXENnxXFC_RUrW4mkaf1NtHvFEq4dTPYyMhau-Pnf0F7d5n_Ub4CMsZ-JVITcgaL5BMC46mUYM7psWsHbqV4XOuysvL_hJ8tKdcM0MOa9KbMTc_9nm_Nv4A7_UDx4GWYmjzey20ActLZZ11MwtsIVKBmhJihUBJylSOsJHddm1YJPlzPy-6jlVLk8qAnxNibGw58uJqVb9OKdY8FQzSROWIM0emiGU2setFX_", dateAdded = System.currentTimeMillis()),
-        TrackEntity(id = "cloud_2", title = "Dark All Day", artist = "Gunship", album = "Dark All Day", albumArtist = "Gunship", genre = "INDUSTRIAL", year = 2018, trackNumber = 1, discNumber = 1, duration = 315, bitrate = 320, sampleRate = 44100, format = "mp3", filePath = "https://example.com/dark_all_day", fileSize = 5500000L, artworkPath = "https://lh3.googleusercontent.com/aida-public/AB6AXuAUpFNWGTcVOrzXC-2iwWBlLbKyORUaJ5NxuJRr9ATSpaLTNN-el0XQwcePmkDNfsV0wRhp3F3U_jeSKjvbnKp67snBvZCVqiV8cqopjO3_vkkwbtbudeZJPlHkiTqYi4p8BQ7kLjV7fEo5km5pIanS6_JCtJ6PlTj9bU1-MTQ8tewixigM5LvZbbX2ic0UNdxGKr8dLPVb4oJ896A0_V8ovoSP6iiRJADMWzouIh5AeGZryV7caIX8uXKQLcvuBda2ssdUaFdW21Qr", dateAdded = System.currentTimeMillis()),
-        TrackEntity(id = "cloud_3", title = "Atlas", artist = "FM-84", album = "Atlas", albumArtist = "FM-84", genre = "SYNTHWAVE", year = 2016, trackNumber = 1, discNumber = 1, duration = 292, bitrate = 320, sampleRate = 44100, format = "mp3", filePath = "https://example.com/atlas", fileSize = 5200000L, artworkPath = "https://lh3.googleusercontent.com/aida-public/AB6AXuCKXXN6oN2DLv-Ikct-IdyH9Q8jqH4HacTzCZXkprcFW8rqwypnt0WWJXEmYNEChITfinBPNMmHupitl3I4Ix-Dk3wlLi2eRw3oAx13I4imd_OetKCk5cQ2Namhujky6WwzVzWRRc-OfLX9u-BONfeB1ho_CAM_UrzccWi8wDcLX_kx6Z8jYdkHQmiCVUwz4E5e9ZRqaORa-H6KNSukNIeyKfgscnaqypw8Zzr0kvF8dXIfVW_BPsGxaQNKDvCERbatvK_ekame7bQ7", dateAdded = System.currentTimeMillis()),
-        TrackEntity(id = "cloud_4", title = "Cyber Heart", artist = "Laserhawk", album = "Redline", albumArtist = "Laserhawk", genre = "SYNTHWAVE", year = 2010, trackNumber = 1, discNumber = 1, duration = 252, bitrate = 320, sampleRate = 44100, format = "mp3", filePath = "https://example.com/cyber_heart", fileSize = 4900000L, artworkPath = "https://lh3.googleusercontent.com/aida-public/AB6AXuCCnF7asptZ_a4uC50gs_0zs_DWyyq1pt6Zz836XBsIn72VRSpvW9pDAv5__Dr5uWHwB4qJ-DhNb-tKYX8tE2sVgp9bggv12880y9qM1T9SWuHXLQc8NjnV_H8rXen8J6lcG9vCbmhx1jI8grSVcfhyoWkXJHdFQovRj9QGFRcZPtn32jU_31S6BmZ-Gqp-ikmZQBcuAsRjwGS67BmXO-nSS4WbF_8WT9U592ZrsSetPAqVSQN2VMRzY9ohaJDTZhRlMVlA1mHJsZOd", dateAdded = System.currentTimeMillis())
-    )
-
-    // Synchronized Library merging local and cloud tracks
+    // Synchronized Library backed directly by local database records
     val synchronizedLibrary: StateFlow<List<Track>> = localTracks.map { localList ->
-        val mergedMap = mutableMapOf<String, TrackEntity>()
-        cloudTracks.forEach { mergedMap[it.id] = it }
-        localList.forEach { mergedMap[it.id] = it } // Local overrides cloud if same ID
-        mergedMap.values.map { entity ->
+        localList.map { entity ->
             Track(
                 id = entity.id,
                 title = entity.title,

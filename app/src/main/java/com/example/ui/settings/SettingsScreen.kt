@@ -35,10 +35,14 @@ fun SettingsScreen(
     val settingsViewModel: SettingsViewModel = viewModel(
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return SettingsViewModel(
-                    repository = SettingsRepository(context),
-                    api = MmDlpApiImpl()
-                ) as T
+                if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return SettingsViewModel(
+                        repository = SettingsRepository(context),
+                        api = MmDlpApiImpl()
+                    ) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
             }
         }
     )

@@ -407,9 +407,9 @@ class BackupSyncService(private val context: Context) {
                     PlaylistEntity(
                         id = obj.getString("id"),
                         name = obj.getString("name"),
-                        description = obj.optString("description", null).takeIf { it != "null" && !it.isNullOrBlank() },
+                        description = if (!obj.isNull("description")) obj.optString("description").takeIf { it.isNotBlank() } else null,
                         isSmart = obj.optBoolean("isSmart", false),
-                        smartRules = obj.optString("smartRules", null).takeIf { it != "null" && !it.isNullOrBlank() },
+                        smartRules = if (!obj.isNull("smartRules")) obj.optString("smartRules").takeIf { it.isNotBlank() } else null,
                         dateCreated = obj.optLong("dateCreated", System.currentTimeMillis())
                     )
                 )
