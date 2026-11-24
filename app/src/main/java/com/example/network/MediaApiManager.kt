@@ -1,7 +1,11 @@
 package com.example.network
 
+import com.example.core.ffi.AudioSource
+import com.example.core.ffi.MmDlpApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.GET
@@ -38,17 +42,11 @@ interface ReturnYouTubeDislikeApi {
 }
 
 object MediaApiManager {
-    private const val PIPED_BASE_URL = "http://127.0.0.1:8080/"
     private const val SPONSORBLOCK_BASE_URL = "https://sponsor.ajay.app/api/"
     private const val RYD_BASE_URL = "https://returnyoutubedislikeapi.com/"
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
-        .build()
-
-    private val pipedRetrofit = Retrofit.Builder()
-        .baseUrl(PIPED_BASE_URL)
-        .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
 
     private val sponsorBlockRetrofit = Retrofit.Builder()
@@ -61,44 +59,74 @@ object MediaApiManager {
         .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
 
-    val pipedApi: PipedApiService = pipedRetrofit.create(PipedApiService::class.java)
     val sponsorBlockApi: SponsorBlockApi = sponsorBlockRetrofit.create(SponsorBlockApi::class.java)
     val rydApi: ReturnYouTubeDislikeApi = rydRetrofit.create(ReturnYouTubeDislikeApi::class.java)
-    
-    suspend fun searchMusic(query: String): List<PipedSearchItem> {
-        val response = pipedApi.search(query, "music_songs")
-        return response.items
+    private val ffiApi = MmDlpApi()
+
+    suspend fun searchMusic(query: String): List<PipedSearchItem> = withContext(Dispatchers.IO) {
+        try {
+            val results = ffiApi.search(query, AudioSource.YOU_TUBE_MUSIC)
+            results.map {
+                PipedSearchItem(
+                    url = "/watch?v=${it.trackId}",
+                    title = it.title,
+                    thumbnail = it.albumArtUrl ?: "",
+                    uploaderName = it.artist,
+                    uploaderUrl = null,
+                    uploadedDate = null,
+                    views = 0L,
+                    duration = 0L,
+                    isShort = false
+                )
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
     
-    suspend fun getStreamUrl(videoId: String): String? {
-        val streams = pipedApi.getStreams(videoId)
-        // Prefer m4a or webm audio
-        val bestAudio = streams.audioStreams.maxByOrNull { it.bitrate }
-        return bestAudio?.url
+    suspend fun getStreamUrl(videoId: String): String? = withContext(Dispatchers.IO) {
+        try {
+            ffiApi.getStreamUrl(videoId, AudioSource.YOU_TUBE_MUSIC)
+        } catch (e: Exception) {
+            null
+        }
     }
 
-    suspend fun getSuggestions(query: String): List<String> {
-        return try {
-            pipedApi.getSuggestions(query)
+    suspend fun getSuggestions(query: String): List<String> = withContext(Dispatchers.IO) {
+        try {
+            val results = ffiApi.search(query, AudioSource.YOU_TUBE_MUSIC)
+            results.take(10).map { "${it.title} - ${it.artist}" }
         } catch (e: Exception) {
             emptyList()
         }
     }
 
     suspend fun getPlaylist(playlistId: String): PipedPlaylistResponse {
-        return pipedApi.getPlaylist(playlistId)
+        return PipedPlaylistResponse(
+            name = "Playlist",
+            thumbnailUrl = "",
+            description = null,
+            uploader = "YouTube Music",
+            uploaderUrl = null,
+            videos = 0,
+            relatedItems = emptyList()
+        )
     }
 
     suspend fun getChannel(channelId: String): PipedChannelResponse {
-        return pipedApi.getChannel(channelId)
+        return PipedChannelResponse(
+            id = channelId,
+            name = "Artist",
+            avatarUrl = null,
+            bannerUrl = null,
+            subscriberCount = 0L,
+            description = null,
+            relatedPlaylists = emptyList()
+        )
     }
 
-    suspend fun getTrending(): List<PipedSearchItem> {
-        return try {
-            pipedApi.getTrending()
-        } catch (e: Exception) {
-            emptyList()
-        }
+    suspend fun getTrending(): List<PipedSearchItem> = withContext(Dispatchers.IO) {
+        searchMusic("Trending Music")
     }
 
     suspend fun getSponsorSegments(videoId: String): List<SponsorSegment> {
@@ -117,4 +145,5 @@ object MediaApiManager {
         }
     }
 }
+
 

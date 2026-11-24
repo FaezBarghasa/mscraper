@@ -74,14 +74,46 @@ fun DiscoveryScreen(
     val filteredTrending = if (selectedGenre == "ALL") allTrendingItems else allTrendingItems.filter { it.genre.equals(selectedGenre, ignoreCase = true) }
     val filteredReleases = if (selectedGenre == "ALL") allReleaseItems else allReleaseItems.filter { it.genre.equals(selectedGenre, ignoreCase = true) }
 
-    val trackListItems = listOf(
-        Track("t1", "Neon Nights", "The Midnight", "4:15", "https://lh3.googleusercontent.com/aida-public/AB6AXuDqdCMr_-ekSmUoVVPk1cHSB1ll6kp_NQLJFI7kiw_IXENnxXFC_RUrW4mkaf1NtHvFEq4dTPYyMhau-Pnf0F7d5n_Ub4CMsZ-JVITcgaL5BMC46mUYM7psWsHbqV4XOuysvL_hJ8tKdcM0MOa9KbMTc_9nm_Nv4A7_UDx4GWYmjzey20ActLZZ11MwtsIVKBmhJihUBJylSOsJHddm1YJPlzPy-6jlVLk8qAnxNibGw58uJqVb9OKdY8FQzSROWIM0emiGU2setFX_"),
-        Track("t2", "Dark All Day", "Gunship", "5:15", "https://lh3.googleusercontent.com/aida-public/AB6AXuAUpFNWGTcVOrzXC-2iwWBlLbKyORUaJ5NxuJRr9ATSpaLTNN-el0XQwcePmkDNfsV0wRhp3F3U_jeSKjvbnKp67snBvZCVqiV8cqopjO3_vkkwbtbudeZJPlHkiTqYi4p8BQ7kLjV7fEo5km5pIanS6_JCtJ6PlTj9bU1-MTQ8tewixigM5LvZbbX2ic0UNdxGKr8dLPVb4oJ896A0_V8ovoSP6iiRJADMWzouIh5AeGZryV7caIX8uXKQLcvuBda2ssdUaFdW21Qr"),
-        Track("t3", "Atlas", "FM-84", "4:52", "https://lh3.googleusercontent.com/aida-public/AB6AXuCKXXN6oN2DLv-Ikct-IdyH9Q8jqH4HacTzCZXkprcFW8rqwypnt0WWJXEmYNEChITfinBPNMmHupitl3I4Ix-Dk3wlLi2eRw3oAx13I4imd_OetKCk5cQ2Namhujky6WwzVzWRRc-OfLX9u-BONfeB1ho_CAM_UrzccWi8wDcLX_kx6Z8jYdkHQmiCVUwz4E5e9ZRqaORa-H6KNSukNIeyKfgscnaqypw8Zzr0kvF8dXIfVW_BPsGxaQNKDvCERbatvK_ekame7bQ7"),
-        Track("t4", "Cyber Heart", "Laserhawk", "4:12", "https://lh3.googleusercontent.com/aida-public/AB6AXuCCnF7asptZ_a4uC50gs_0zs_DWyyq1pt6Zz836XBsIn72VRSpvW9pDAv5__Dr5uWHwB4qJ-DhNb-tKYX8tE2sVgp9bggv12880y9qM1T9SWuHXLQc8NjnV_H8rXen8J6lcG9vCbmhx1jI8grSVcfhyoWkXJHdFQovRj9QGFRcZPtn32jU_31S6BmZ-Gqp-ikmZQBcuAsRjwGS67BmXO-nSS4WbF_8WT9U592ZrsSetPAqVSQN2VMRzY9ohaJDTZhRlMVlA1mHJsZOd")
+    // Dynamic trending tracks loaded from InnerTube via MmDlpApi
+    var trendingTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
+    var isLoadingTrending by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isLoadingTrending = true
+        try {
+            val ffiApi = com.example.core.ffi.MmDlpApi()
+            val results = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                ffiApi.search("Trending Music Synthwave", com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC)
+            }
+            if (results.isNotEmpty()) {
+                trendingTracks = results.map { meta ->
+                    Track(
+                        id = meta.trackId,
+                        title = meta.title,
+                        artist = meta.artist,
+                        duration = "3:30",
+                        imageUrl = meta.albumArtUrl ?: "",
+                        filePath = "" // Will be resolved dynamically on tap via MediaApiManager.getStreamUrl
+                    )
+                }
+            }
+        } catch (_: Exception) {
+            // Keep fallback below if offline
+        } finally {
+            isLoadingTrending = false
+        }
+    }
+
+    val fallbackTrackListItems = listOf(
+        Track("synth_1", "Neon Nights", "The Midnight", "4:15", "https://lh3.googleusercontent.com/aida-public/AB6AXuDqdCMr_-ekSmUoVVPk1cHSB1ll6kp_NQLJFI7kiw_IXENnxXFC_RUrW4mkaf1NtHvFEq4dTPYyMhau-Pnf0F7d5n_Ub4CMsZ-JVITcgaL5BMC46mUYM7psWsHbqV4XOuysvL_hJ8tKdcM0MOa9KbMTc_9nm_Nv4A7_UDx4GWYmjzey20ActLZZ11MwtsIVKBmhJihUBJylSOsJHddm1YJPlzPy-6jlVLk8qAnxNibGw58uJqVb9OKdY8FQzSROWIM0emiGU2setFX_"),
+        Track("cyber_heart", "Cyber Heart", "Laserhawk", "4:12", "https://lh3.googleusercontent.com/aida-public/AB6AXuCCnF7asptZ_a4uC50gs_0zs_DWyyq1pt6Zz836XBsIn72VRSpvW9pDAv5__Dr5uWHwB4qJ-DhNb-tKYX8tE2sVgp9bggv12880y9qM1T9SWuHXLQc8NjnV_H8rXen8J6lcG9vCbmhx1jI8grSVcfhyoWkXJHdFQovRj9QGFRcZPtn32jU_31S6BmZ-Gqp-ikmZQBcuAsRjwGS67BmXO-nSS4WbF_8WT9U592ZrsSetPAqVSQN2VMRzY9ohaJDTZhRlMVlA1mHJsZOd"),
+        Track("industrial_rage", "Industrial Rage", "Revenant", "5:02", "https://lh3.googleusercontent.com/aida-public/AB6AXuBzHyiMbZ3DrUc4JhhC7d9wW0vw_t-lfV1DtDolywLb9mRYQ4-UOTr49bhgWtylhmQGt-hxIiOyHZEb2-uApQ6f1vNdcuo0l4xPbw0yTuL_ThR0jHGOD9HAmDWQUwur6Ti6eF_ZDIksYeAEyVqCQlx05nxnbfiTFDxgXDfz6GOeBnXOrhhzb6sqjbrDXD8XlfVcuym9RuC9HeE0Ra8oUNfN3jwvO6Ga6myUP5XfMJSlzWMT_-p0M_-XiYmsoqT1AyMMrSFOYkdAtP_G"),
+        Track("golden_hour", "Golden Hour", "The Midnight", "4:33", "https://lh3.googleusercontent.com/aida-public/AB6AXuBH4V3cKguN1f112WrqvJWHOfXpOay-QpdOfc5Td5yR-eSa9jgbX3ATdZ9BRmR1FnoA4IQQtAYsHCPH9yLBEvihPTjBnfrE-99fDkYPRpXI9ju28dZHMGqti2KNcFcwgnPWTxd6dbLQ595UYrGPUevHtXqBheJvzvZ4NahBU2u5CWjDyluk7i26eGrwGRRqzCFc-YRRNdFD6U_D4AXElMGY0hny-K79Bg95cs0t3WUZTHinVQPDU7C9wnsJ-DCw4UOX1kPrauzX7aaL")
     )
 
-    val filteredTrackListItems = trackListItems.filter {
+    val activeTrackList = if (trendingTracks.isNotEmpty()) trendingTracks else fallbackTrackListItems
+
+    val filteredTrackListItems = activeTrackList.filter {
         it.title.contains(searchQuery, ignoreCase = true) || it.artist.contains(searchQuery, ignoreCase = true)
     }
 

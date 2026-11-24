@@ -3,7 +3,19 @@ use crate::data::extractors::youtube::YouTubeExtractor;
 use crate::network::quic_client::QuicClient;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::sync::RwLock;
+use std::sync::{Arc, LazyLock, RwLock};
+
+static RUNTIME: LazyLock<tokio::runtime::Runtime> = LazyLock::new(|| {
+    tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .enable_all()
+        .build()
+        .expect("Failed to initialize MmDlpApi Tokio Runtime")
+});
+
+static GLOBAL_QUIC_CLIENT: LazyLock<Arc<QuicClient>> = LazyLock::new(|| {
+    Arc::new(QuicClient::new().expect("Failed to initialize persistent QuicClient"))
+});
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum EngineError {
@@ -101,12 +113,7 @@ impl MmDlpApi {
         query: String,
         source: AudioSource,
     ) -> Result<Vec<TrackMetadata>, EngineError> {
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .map_err(|e| EngineError::Generic(e.to_string()))?;
-
-        rt.block_on(async {
+        RUNTIME.block_on(async {
             match source {
                 AudioSource::YouTubeMusic => {
                     let extractor = YouTubeExtractor::new();
@@ -130,12 +137,7 @@ impl MmDlpApi {
         track_id: String,
         source: AudioSource,
     ) -> Result<String, EngineError> {
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .map_err(|e| EngineError::Generic(e.to_string()))?;
-
-        rt.block_on(async {
+        RUNTIME.block_on(async {
             match source {
                 AudioSource::YouTubeMusic | AudioSource::Spotify => {
                     let extractor = YouTubeExtractor::new();
@@ -151,12 +153,7 @@ impl MmDlpApi {
     }
 
     pub fn extract_metadata(&self, url: String) -> Result<TrackMetadata, EngineError> {
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .map_err(|e| EngineError::Generic(e.to_string()))?;
-
-        rt.block_on(async {
+        RUNTIME.block_on(async {
             if url.contains("soundcloud.com") {
                 let extractor = SoundCloudExtractor::new();
                 let results = extractor.search(&url).await?;
@@ -206,13 +203,8 @@ impl MmDlpApi {
 
         let enable_quic = *self.quic_enabled.read().unwrap_or_else(|e| e.into_inner());
 
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .map_err(|e| EngineError::Generic(e.to_string()))?;
-
         // Resolve stream URL if input is a YouTube/SoundCloud webpage URL
-        let stream_url = rt.block_on(async {
+        let stream_url = RUNTIME.block_on(async {
             if url.contains("youtube.com") || url.contains("youtu.be") {
                 let video_id = if let Some(idx) = url.find("v=") {
                     let rest = &url[idx + 2..];
@@ -234,9 +226,8 @@ impl MmDlpApi {
             }
         });
 
-        let fetched_bytes = rt.block_on(async {
-            let client = QuicClient::new().map_err(|e| EngineError::Network(e.to_string()))?;
-            client
+        let fetched_bytes = RUNTIME.block_on(async {
+            GLOBAL_QUIC_CLIENT
                 .fetch(&stream_url, enable_quic)
                 .await
                 .map_err(|e| EngineError::Network(format!("Failed to stream audio payload: {e}")))
