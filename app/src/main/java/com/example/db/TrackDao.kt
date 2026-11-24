@@ -28,6 +28,9 @@ interface TrackDao {
 
     @Query("UPDATE tracks SET isFavorite = :isFav WHERE id = :id")
     suspend fun updateFavoriteStatus(id: String, isFav: Boolean)
+
+    @Query("UPDATE tracks SET title = :title, artist = :artist WHERE id = :id")
+    suspend fun updateTrackMetadata(id: String, title: String, artist: String)
 }
 
 @Dao

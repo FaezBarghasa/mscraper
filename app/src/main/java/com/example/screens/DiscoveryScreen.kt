@@ -35,6 +35,8 @@ import com.example.model.Track
 import com.example.ui.theme.*
 import com.example.viewmodel.MusicViewModel
 
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -58,33 +60,20 @@ fun DiscoveryScreen(
     val secColor by viewModel.themeSecondary.collectAsState()
     val favoriteTracks by viewModel.favoriteTracks.collectAsState()
 
-    val allTrendingItems = listOf(
-        TrendingItem("synth_1", "Synthwave Vol. 1", "Various Artists", "https://lh3.googleusercontent.com/aida-public/AB6AXuCOdm7DaHtn5PpcHx1T7QhMSvxUAdIOF1huUXzT1X3sq-BBsPvwIccsQFiIoa9ggXmhLNLJFvB60ZpEGTUGsTs-0LI7XFTW727qvJg2dZysvoMOEyzkrKPVTf8hsliOUGexo407H8WjXwkcjwP-v3M1Y9yX21hYZOd32SZW7O6eve7bOE0e1ZYCSmnrVCXgu9PH5tXh578R-jMGpDajp-zVuhTwGZ9g4GEvsBV1d4_m3Yyspl3G5NrqmPq22jWFFwIO2PhrWv27shji", "SYNTHWAVE", "3:45"),
-        TrendingItem("cyber_heart", "Cyber Heart", "Laserhawk", "https://lh3.googleusercontent.com/aida-public/AB6AXuCCnF7asptZ_a4uC50gs_0zs_DWyyq1pt6Zz836XBsIn72VRSpvW9pDAv5__Dr5uWHwB4qJ-DhNb-tKYX8tE2sVgp9bggv12880y9qM1T9SWuHXLQc8NjnV_H8rXen8J6lcG9vCbmhx1jI8grSVcfhyoWkXJHdFQovRj9QGFRcZPtn32jU_31S6BmZ-Gqp-ikmZQBcuAsRjwGS67BmXO-nSS4WbF_8WT9U592ZrsSetPAqVSQN2VMRzY9ohaJDTZhRlMVlA1mHJsZOd", "SYNTHWAVE", "4:12"),
-        TrendingItem("industrial_rage", "Industrial Rage", "Revenant", "https://lh3.googleusercontent.com/aida-public/AB6AXuBzHyiMbZ3DrUc4JhhC7d9wW0vw_t-lfV1DtDolywLb9mRYQ4-UOTr49bhgWtylhmQGt-hxIiOyHZEb2-uApQ6f1vNdcuo0l4xPbw0yTuL_ThR0jHGOD9HAmDWQUwur6Ti6eF_ZDIksYeAEyVqCQlx05nxnbfiTFDxgXDfz6GOeBnXOrhhzb6sqjbrDXD8XlfVcuym9RuC9HeE0Ra8oUNfN3jwvO6Ga6myUP5XfMJSlzWMT_-p0M_-XiYmsoqT1AyMMrSFOYkdAtP_G", "INDUSTRIAL", "5:02"),
-        TrendingItem("golden_hour", "Golden Hour", "The Midnight", "https://lh3.googleusercontent.com/aida-public/AB6AXuBH4V3cKguN1f112WrqvJWHOfXpOay-QpdOfc5Td5yR-eSa9jgbX3ATdZ9BRmR1FnoA4IQQtAYsHCPH9yLBEvihPTjBnfrE-99fDkYPRpXI9ju28dZHMGqti2KNcFcwgnPWTxd6dbLQ595UYrGPUevHtXqBheJvzvZ4NahBU2u5CWjDyluk7i26eGrwGRRqzCFc-YRRNdFD6U_D4AXElMGY0hny-K79Bg95cs0t3WUZTHinVQPDU7C9wnsJ-DCw4UOX1kPrauzX7aaL", "SYNTHWAVE", "4:33")
-    )
-    
-    val allReleaseItems = listOf(
-        ReleaseItem("dark_all_day", "Dark All Day", "Gunship", "2h ago", "https://lh3.googleusercontent.com/aida-public/AB6AXuAUpFNWGTcVOrzXC-2iwWBlLbKyORUaJ5NxuJRr9ATSpaLTNN-el0XQwcePmkDNfsV0wRhp3F3U_jeSKjvbnKp67snBvZCVqiV8cqopjO3_vkkwbtbudeZJPlHkiTqYi4p8BQ7kLjV7fEo5km5pIanS6_JCtJ6PlTj9bU1-MTQ8tewixigM5LvZbbX2ic0UNdxGKr8dLPVb4oJ896A0_V8ovoSP6iiRJADMWzouIh5AeGZryV7caIX8uXKQLcvuBda2ssdUaFdW21Qr", "INDUSTRIAL", "5:15"),
-        ReleaseItem("atlas", "Atlas", "FM-84", "5h ago", "https://lh3.googleusercontent.com/aida-public/AB6AXuCKXXN6oN2DLv-Ikct-IdyH9Q8jqH4HacTzCZXkprcFW8rqwypnt0WWJXEmYNEChITfinBPNMmHupitl3I4Ix-Dk3wlLi2eRw3oAx13I4imd_OetKCk5cQ2Namhujky6WwzVzWRRc-OfLX9u-BONfeB1ho_CAM_UrzccWi8wDcLX_kx6Z8jYdkHQmiCVUwz4E5e9ZRqaORa-H6KNSukNIeyKfgscnaqypw8Zzr0kvF8dXIfVW_BPsGxaQNKDvCERbatvK_ekame7bQ7", "SYNTHWAVE", "4:52"),
-        ReleaseItem("electro_shiver", "Electro Shiver", "Darkstar", "1d ago", "https://lh3.googleusercontent.com/aida-public/AB6AXuDMKNDi5OybO4bNSthBslKCbQWGKFhvNcEAdksG8_3ImWV1Q5nvNgyd-_vaL5GVD6A10I8DNPyxpl9Pw28U8U6toBHR782OGxJ4Ii2j_cWUlUN3FNGdiQkv-7RMa2GMlJqzKmRcLf4Q4iieXC6Js51hlazr0ObcZ0NhEPIsBs4BLnyl8kNX1nmUydMul-_4wjU8q5aBI2XGUY3Mr3J3NBzPV1O8h7pf1E_EaBnZwWvoN447paZSFd3Ry4Za7NRnnkbRGo8I1O9NsbdN", "ELECTRO-DARK", "3:58")
-    )
-    
-    val filteredTrending = if (selectedGenre == "ALL") allTrendingItems else allTrendingItems.filter { it.genre.equals(selectedGenre, ignoreCase = true) }
-    val filteredReleases = if (selectedGenre == "ALL") allReleaseItems else allReleaseItems.filter { it.genre.equals(selectedGenre, ignoreCase = true) }
+    val synchronizedLibrary by viewModel.synchronizedLibrary.collectAsState()
 
     // Dynamic trending tracks loaded from InnerTube via MmDlpApi
     var trendingTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
+    var releaseTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
     var isLoadingTrending by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         isLoadingTrending = true
         try {
             val ffiApi = com.example.core.ffi.MmDlpApi()
-            val results = ffiApi.search("Trending Music Synthwave", com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC)
-            if (results.isNotEmpty()) {
-                trendingTracks = results.map { meta ->
+            val tResults = ffiApi.search("Trending Synthwave", com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC)
+            if (tResults.isNotEmpty()) {
+                trendingTracks = tResults.map { meta ->
                     val durationStr = meta.durationSeconds?.let { s ->
                         val totalSecs = s.toLong()
                         val m = totalSecs / 60
@@ -98,25 +87,44 @@ fun DiscoveryScreen(
                         artist = meta.artist,
                         duration = durationStr,
                         imageUrl = meta.albumArtUrl ?: "",
-                        filePath = "" // Will be resolved dynamically on tap via MediaApiManager.getStreamUrl
+                        filePath = ""
+                    )
+                }
+            }
+            val rResults = ffiApi.search("Electronic New Releases", com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC)
+            if (rResults.isNotEmpty()) {
+                releaseTracks = rResults.map { meta ->
+                    val durationStr = meta.durationSeconds?.let { s ->
+                        val totalSecs = s.toLong()
+                        val m = totalSecs / 60
+                        val sec = totalSecs % 60
+                        String.format(java.util.Locale.US, "%d:%02d", m, sec)
+                    } ?: "--:--"
+
+                    Track(
+                        id = meta.trackId,
+                        title = meta.title,
+                        artist = meta.artist,
+                        duration = durationStr,
+                        imageUrl = meta.albumArtUrl ?: "",
+                        filePath = ""
                     )
                 }
             }
         } catch (_: Exception) {
-            // Keep fallback below if offline
+            // Keep fallback below to synchronized library if offline
         } finally {
             isLoadingTrending = false
         }
     }
 
-    val fallbackTrackListItems = listOf(
-        Track("synth_1", "Neon Nights", "The Midnight", "4:15", "https://lh3.googleusercontent.com/aida-public/AB6AXuDqdCMr_-ekSmUoVVPk1cHSB1ll6kp_NQLJFI7kiw_IXENnxXFC_RUrW4mkaf1NtHvFEq4dTPYyMhau-Pnf0F7d5n_Ub4CMsZ-JVITcgaL5BMC46mUYM7psWsHbqV4XOuysvL_hJ8tKdcM0MOa9KbMTc_9nm_Nv4A7_UDx4GWYmjzey20ActLZZ11MwtsIVKBmhJihUBJylSOsJHddm1YJPlzPy-6jlVLk8qAnxNibGw58uJqVb9OKdY8FQzSROWIM0emiGU2setFX_"),
-        Track("cyber_heart", "Cyber Heart", "Laserhawk", "4:12", "https://lh3.googleusercontent.com/aida-public/AB6AXuCCnF7asptZ_a4uC50gs_0zs_DWyyq1pt6Zz836XBsIn72VRSpvW9pDAv5__Dr5uWHwB4qJ-DhNb-tKYX8tE2sVgp9bggv12880y9qM1T9SWuHXLQc8NjnV_H8rXen8J6lcG9vCbmhx1jI8grSVcfhyoWkXJHdFQovRj9QGFRcZPtn32jU_31S6BmZ-Gqp-ikmZQBcuAsRjwGS67BmXO-nSS4WbF_8WT9U592ZrsSetPAqVSQN2VMRzY9ohaJDTZhRlMVlA1mHJsZOd"),
-        Track("industrial_rage", "Industrial Rage", "Revenant", "5:02", "https://lh3.googleusercontent.com/aida-public/AB6AXuBzHyiMbZ3DrUc4JhhC7d9wW0vw_t-lfV1DtDolywLb9mRYQ4-UOTr49bhgWtylhmQGt-hxIiOyHZEb2-uApQ6f1vNdcuo0l4xPbw0yTuL_ThR0jHGOD9HAmDWQUwur6Ti6eF_ZDIksYeAEyVqCQlx05nxnbfiTFDxgXDfz6GOeBnXOrhhzb6sqjbrDXD8XlfVcuym9RuC9HeE0Ra8oUNfN3jwvO6Ga6myUP5XfMJSlzWMT_-p0M_-XiYmsoqT1AyMMrSFOYkdAtP_G"),
-        Track("golden_hour", "Golden Hour", "The Midnight", "4:33", "https://lh3.googleusercontent.com/aida-public/AB6AXuBH4V3cKguN1f112WrqvJWHOfXpOay-QpdOfc5Td5yR-eSa9jgbX3ATdZ9BRmR1FnoA4IQQtAYsHCPH9yLBEvihPTjBnfrE-99fDkYPRpXI9ju28dZHMGqti2KNcFcwgnPWTxd6dbLQ595UYrGPUevHtXqBheJvzvZ4NahBU2u5CWjDyluk7i26eGrwGRRqzCFc-YRRNdFD6U_D4AXElMGY0hny-K79Bg95cs0t3WUZTHinVQPDU7C9wnsJ-DCw4UOX1kPrauzX7aaL")
-    )
+    val activeTrending = if (trendingTracks.isNotEmpty()) trendingTracks else synchronizedLibrary
+    val activeReleases = if (releaseTracks.isNotEmpty()) releaseTracks else synchronizedLibrary.asReversed()
+    val activeTrackList = if (activeTrending.isNotEmpty()) activeTrending else synchronizedLibrary
 
-    val activeTrackList = if (trendingTracks.isNotEmpty()) trendingTracks else fallbackTrackListItems
+    val filteredTrending = if (selectedGenre == "ALL") activeTrending else activeTrending.filter { it.genre.equals(selectedGenre, ignoreCase = true) }
+    val filteredReleases = if (selectedGenre == "ALL") activeReleases else activeReleases.filter { it.genre.equals(selectedGenre, ignoreCase = true) }
+    val featuredTrack = activeTrending.firstOrNull() ?: synchronizedLibrary.firstOrNull()
 
     val filteredTrackListItems = activeTrackList.filter {
         it.title.contains(searchQuery, ignoreCase = true) || it.artist.contains(searchQuery, ignoreCase = true)
@@ -153,7 +161,7 @@ fun DiscoveryScreen(
             }
         }
 
-        FeaturedSection(navController, viewModel, accentColor)
+        FeaturedSection(featuredTrack, navController, viewModel, accentColor)
         
         Text(
             text = "SUB-GENRES DECODERS",
@@ -187,12 +195,13 @@ fun DiscoveryScreen(
             androidx.compose.material3.IconButton(
                 onClick = {
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    if (filteredTrackListItems.isNotEmpty()) {
-                        filteredTrackListItems.forEach { track ->
-                            val url = track.filePath.takeIf { it.isNotEmpty() } ?: "https://soundcloud.com/dummy/${track.title}"
+                    val downloadableTracks = filteredTrackListItems.filter { it.filePath.startsWith("http") || it.id.isNotEmpty() }
+                    if (downloadableTracks.isNotEmpty()) {
+                        downloadableTracks.forEach { track ->
+                            val url = if (track.filePath.startsWith("http")) track.filePath else "https://www.youtube.com/watch?v=${track.id}"
                             viewModel.downloadManager.startDownload(url, "mp3", "320kbps")
                         }
-                        android.widget.Toast.makeText(context, "Downloading all tracks...", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(context, "Queued ${downloadableTracks.size} tracks for download", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier.background(Color.White.copy(alpha = 0.05f), androidx.compose.foundation.shape.CircleShape)
@@ -379,8 +388,7 @@ fun DiscoveryScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    // Update the track in our view model (for real app we'd update DB)
-                    // Currently DiscoveryScreen uses static lists, so this just shows the UI capability
+                    viewModel.updateTrackMetadata(trackToEdit!!.id, editTitle.trim(), editArtist.trim())
                     android.widget.Toast.makeText(navController.context, "Metadata Updated: $editTitle", android.widget.Toast.LENGTH_SHORT).show()
                     trackToEdit = null
                 }) {

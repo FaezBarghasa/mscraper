@@ -153,13 +153,16 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
                         val durationMs = durationStr?.toLongOrNull() ?: 0L
 
-                        val parsedYear = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_YEAR)
-                            ?.toIntOrNull()
+                        val parsedYear =
+                            retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_YEAR)
+                                ?.toIntOrNull()
 
-                        val trackNumStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)
+                        val trackNumStr =
+                            retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)
                         val parsedTrackNum = trackNumStr?.substringBefore('/')?.toIntOrNull()
 
-                        val discNumStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER)
+                        val discNumStr =
+                            retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER)
                         val parsedDiscNum = discNumStr?.substringBefore('/')?.toIntOrNull()
 
                         val ext = name.substringAfterLast('.', "MP3").uppercase()
@@ -957,14 +960,19 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             trackDao.deleteTrackById(track.id)
             try {
                 if (track.filePath.startsWith("content://")) {
-                    getApplication<Application>().contentResolver.delete(android.net.Uri.parse(track.filePath), null, null)
+                    getApplication<Application>().contentResolver.delete(
+                        android.net.Uri.parse(track.filePath),
+                        null,
+                        null
+                    )
                 } else {
                     val file = java.io.File(track.filePath)
                     if (file.exists()) {
                         file.delete()
                     }
                 }
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
         }
     }
 
