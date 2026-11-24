@@ -186,3 +186,9 @@ impl MmDlpApi {
             .map_err(|e| EngineError::Serialization(e.to_string()))
     }
 }
+
+impl Default for MmDlpApi {
+    fn default() -> Self {
+        Self::new()
+    }
+}

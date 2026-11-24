@@ -35,7 +35,7 @@ impl QuicClient {
         let fallback_client = ReqwestClient::builder()
             .timeout(std::time::Duration::from_secs(30))
             .build()
-            .map_err(|e| MediaError::NetworkError(e))?;
+            .map_err(MediaError::NetworkError)?;
 
         Ok(Self {
             h3_client_config: client_config,
