@@ -71,12 +71,13 @@ fun AudioVisualizer(
             "WAVE" -> {
                 val path = Path()
                 val points = 60
-                val activeAmp = if (isPlaying) h * 0.45f else h * 0.1f
-                
+                val activeAmp = if (isPlaying) h * 0.45f else 0f
+                val activePhase = if (isPlaying) phaseShift else 0f
+
                 for (i in 0..points) {
                     val x = w * i / points
                     // Calculate y using sine wave with phase shift
-                    val angle = (i.toFloat() / points) * 4 * Math.PI.toFloat() + phaseShift
+                    val angle = (i.toFloat() / points) * 4 * Math.PI.toFloat() + activePhase
                     val y = (h / 2) + Math.sin(angle.toDouble()).toFloat() * activeAmp
                     if (i == 0) {
                         path.moveTo(x, y)
@@ -217,7 +218,7 @@ fun AudioVisualizer(
                 
                 bars.forEachIndexed { index, anim ->
                     val x = index * barWidth * 1.8f
-                    val height = h * anim.value
+                    val height = if (isPlaying) h * anim.value else h * 0.04f
                     val y = h - height
                     
                     drawRect(

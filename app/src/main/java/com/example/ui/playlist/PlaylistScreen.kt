@@ -62,12 +62,17 @@ fun PlaylistScreen(navController: NavController, viewModel: MusicViewModel = vie
                 IconButton(
                     onClick = {
                         haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                        if (queue.isNotEmpty()) {
-                            queue.forEach { track ->
-                                val url = track.filePath.takeIf { it.isNotEmpty() } ?: "https://soundcloud.com/dummy/${track.title}"
-                                viewModel.downloadManager.startDownload(url, "mp3", "320kbps")
+                        val downloadableTracks = queue.filter { track ->
+                            track.filePath.startsWith("http://", ignoreCase = true) ||
+                            track.filePath.startsWith("https://", ignoreCase = true)
+                        }
+                        if (downloadableTracks.isNotEmpty()) {
+                            downloadableTracks.forEach { track ->
+                                viewModel.downloadManager.startDownload(track.filePath, "mp3", "320kbps")
                             }
-                            android.widget.Toast.makeText(context, "Downloading Playlist...", android.widget.Toast.LENGTH_SHORT).show()
+                            android.widget.Toast.makeText(context, "Queued ${downloadableTracks.size} tracks for download", android.widget.Toast.LENGTH_SHORT).show()
+                        } else {
+                            android.widget.Toast.makeText(context, "All playlist tracks are already local or lack stream URLs", android.widget.Toast.LENGTH_SHORT).show()
                         }
                     },
                     modifier = Modifier.background(Color.White.copy(alpha = 0.05f), CircleShape)
