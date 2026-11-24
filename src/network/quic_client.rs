@@ -71,11 +71,13 @@ impl QuicClient {
             .next()
             .ok_or_else(|| format!("No IP addresses found for {}:{}", host, port))?;
 
-        let connection = self
+        let connect_fut = self
             .endpoint
             .connect(server_addr, host)
-            .map_err(|e| e.to_string())?
+            .map_err(|e| e.to_string())?;
+        let connection = tokio::time::timeout(std::time::Duration::from_secs(3), connect_fut)
             .await
+            .map_err(|_| "QUIC connection timed out".to_string())?
             .map_err(|e| e.to_string())?;
 
         let (mut driver, mut send_request) = h3::client::new(h3_quinn::Connection::new(connection))

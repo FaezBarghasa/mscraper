@@ -12,7 +12,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.example.core.MmDlpApiImpl
 import com.example.data.settings.SettingsRepository
-import com.example.ui.navigation.AppNavigation
 import com.example.ui.theme.MscraperTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first

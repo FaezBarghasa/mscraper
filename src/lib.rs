@@ -1,4 +1,4 @@
-#![allow(clippy::double_must_use)]
+#![allow(clippy::double_must_use, clippy::collapsible_if)]
 
 pub mod data;
 pub mod domain;

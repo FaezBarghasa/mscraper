@@ -108,12 +108,12 @@ impl YouTubeExtractor {
                         .unwrap_or("Unknown Artist")
                         .to_string();
 
-                    let album_art_url = renderer["thumbnail"]["musicThumbnailRenderer"]
-                        ["thumbnail"]["thumbnails"]
-                        .as_array()
-                        .and_then(|arr| arr.last())
-                        .and_then(|t| t["url"].as_str())
-                        .map(str::to_string);
+                    let album_art_url =
+                        renderer["thumbnail"]["musicThumbnailRenderer"]["thumbnail"]["thumbnails"]
+                            .as_array()
+                            .and_then(|arr| arr.last())
+                            .and_then(|t| t["url"].as_str())
+                            .map(str::to_string);
 
                     tracks.push(TrackMetadata {
                         title,
@@ -138,16 +138,18 @@ impl YouTubeExtractor {
                             .unwrap_or_default()
                             .to_string();
                         if !track_id.is_empty() {
-                            let title = val["flexColumns"][0]
-                                ["musicResponsiveListItemFlexColumnRenderer"]["text"]["runs"][0]["text"]
-                                .as_str()
-                                .unwrap_or("Unknown Title")
-                                .to_string();
-                            let artist = val["flexColumns"][1]
-                                ["musicResponsiveListItemFlexColumnRenderer"]["text"]["runs"][0]["text"]
-                                .as_str()
-                                .unwrap_or("Unknown Artist")
-                                .to_string();
+                            let title =
+                                val["flexColumns"][0]["musicResponsiveListItemFlexColumnRenderer"]
+                                    ["text"]["runs"][0]["text"]
+                                    .as_str()
+                                    .unwrap_or("Unknown Title")
+                                    .to_string();
+                            let artist =
+                                val["flexColumns"][1]["musicResponsiveListItemFlexColumnRenderer"]
+                                    ["text"]["runs"][0]["text"]
+                                    .as_str()
+                                    .unwrap_or("Unknown Artist")
+                                    .to_string();
                             tracks.push(TrackMetadata {
                                 title,
                                 artist,
@@ -165,7 +167,10 @@ impl YouTubeExtractor {
         Ok(tracks)
     }
 
-    pub async fn extract_video_info(&self, video_id: &str) -> Result<(TrackMetadata, String), EngineError> {
+    pub async fn extract_video_info(
+        &self,
+        video_id: &str,
+    ) -> Result<(TrackMetadata, String), EngineError> {
         let body = serde_json::json!({
             "videoId": video_id,
             "context": Self::build_android_context(),
@@ -218,7 +223,9 @@ impl YouTubeExtractor {
         // Find best audio format URL
         let adaptive_formats = json["streamingData"]["adaptiveFormats"]
             .as_array()
-            .ok_or_else(|| EngineError::Extractor("No adaptiveFormats found in streamingData".to_string()))?;
+            .ok_or_else(|| {
+                EngineError::Extractor("No adaptiveFormats found in streamingData".to_string())
+            })?;
 
         let stream_url = adaptive_formats
             .iter()
@@ -238,7 +245,9 @@ impl YouTubeExtractor {
                     .filter_map(|f| f["url"].as_str())
                     .next()
             })
-            .ok_or_else(|| EngineError::Extractor("No direct audio stream URL available".to_string()))?
+            .ok_or_else(|| {
+                EngineError::Extractor("No direct audio stream URL available".to_string())
+            })?
             .to_string();
 
         Ok((metadata, stream_url))

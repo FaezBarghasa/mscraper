@@ -268,7 +268,10 @@ impl MmDlpApi {
             if let Some(album) = &track.album {
                 xml.push_str(&format!("      <album>{}</album>\n", album));
             }
-            xml.push_str(&format!("      <source_url>{}</source_url>\n", track.source_url));
+            xml.push_str(&format!(
+                "      <source_url>{}</source_url>\n",
+                track.source_url
+            ));
             xml.push_str(&format!("      <duration>{}</duration>\n", track.duration));
             xml.push_str("    </track>\n");
         }

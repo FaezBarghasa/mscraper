@@ -87,17 +87,14 @@ impl SoundCloudExtractor {
             client_id
         );
 
-        let resp = self
-            .client
-            .get(&search_url)
-            .send()
-            .await
-            .map_err(|e| EngineError::Network(format!("SoundCloud search request failed: {e}")))?;
+        let resp =
+            self.client.get(&search_url).send().await.map_err(|e| {
+                EngineError::Network(format!("SoundCloud search request failed: {e}"))
+            })?;
 
-        let json: Value = resp
-            .json()
-            .await
-            .map_err(|e| EngineError::Extractor(format!("Failed to parse SoundCloud search response: {e}")))?;
+        let json: Value = resp.json().await.map_err(|e| {
+            EngineError::Extractor(format!("Failed to parse SoundCloud search response: {e}"))
+        })?;
 
         let mut tracks = Vec::new();
         if let Some(collection) = json["collection"].as_array() {
@@ -107,7 +104,10 @@ impl SoundCloudExtractor {
                     None => continue,
                 };
 
-                let title = item["title"].as_str().unwrap_or("Unknown Title").to_string();
+                let title = item["title"]
+                    .as_str()
+                    .unwrap_or("Unknown Title")
+                    .to_string();
                 let artist = item["user"]["username"]
                     .as_str()
                     .unwrap_or("Unknown Artist")
@@ -135,17 +135,14 @@ impl SoundCloudExtractor {
             track_id, client_id
         );
 
-        let resp = self
-            .client
-            .get(&track_url)
-            .send()
-            .await
-            .map_err(|e| EngineError::Network(format!("SoundCloud track lookup failed: {e}")))?;
+        let resp =
+            self.client.get(&track_url).send().await.map_err(|e| {
+                EngineError::Network(format!("SoundCloud track lookup failed: {e}"))
+            })?;
 
-        let json: Value = resp
-            .json()
-            .await
-            .map_err(|e| EngineError::Extractor(format!("Failed to parse SoundCloud track JSON: {e}")))?;
+        let json: Value = resp.json().await.map_err(|e| {
+            EngineError::Extractor(format!("Failed to parse SoundCloud track JSON: {e}"))
+        })?;
 
         let media = &json["media"]["transcodings"];
         if let Some(transcodings) = media.as_array() {
@@ -153,7 +150,8 @@ impl SoundCloudExtractor {
                 let format_protocol = t["format"]["protocol"].as_str().unwrap_or_default();
                 if format_protocol == "progressive" || format_protocol == "hls" {
                     if let Some(stream_endpoint) = t["url"].as_str() {
-                        let stream_auth_url = format!("{}?client_id={}", stream_endpoint, client_id);
+                        let stream_auth_url =
+                            format!("{}?client_id={}", stream_endpoint, client_id);
                         if let Ok(stream_resp) = self.client.get(&stream_auth_url).send().await {
                             if let Ok(stream_json) = stream_resp.json::<Value>().await {
                                 if let Some(final_url) = stream_json["url"].as_str() {
@@ -166,6 +164,8 @@ impl SoundCloudExtractor {
             }
         }
 
-        Err(EngineError::Extractor("No playable stream URL found for SoundCloud track".to_string()))
+        Err(EngineError::Extractor(
+            "No playable stream URL found for SoundCloud track".to_string(),
+        ))
     }
 }
