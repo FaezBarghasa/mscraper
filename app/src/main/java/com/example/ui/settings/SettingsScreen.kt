@@ -108,7 +108,7 @@ fun SettingsScreen(
                     onCheckedChange = { musicViewModel.toggleSpatialAudio() },
                     accentColor = accentColor
                 )
-                
+
                 val equalizerEnabled by musicViewModel.equalizerEnabled.collectAsState()
                 SettingsToggle(
                     title = "DSP Equalizer",
@@ -127,14 +127,6 @@ fun SettingsScreen(
                     currentValue = accentColorStr,
                     options = listOf("NEON TOKYO", "DATA GLITCH", "ACID RAIN", "CYAN", "DYNAMIC"),
                     onOptionSelected = { musicViewModel.setCyberAccentColor(it) },
-                    accentColor = accentColor
-                )
-
-                SettingsDropdown(
-                    title = "Theme Mode",
-                    currentValue = themeMode.name,
-                    options = ThemeMode.entries.map { it.name },
-                    onOptionSelected = { settingsViewModel.updateThemeMode(ThemeMode.valueOf(it)) },
                     accentColor = accentColor
                 )
             }

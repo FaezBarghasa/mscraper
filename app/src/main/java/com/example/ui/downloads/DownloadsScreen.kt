@@ -115,12 +115,16 @@ fun DownloadTaskItem(
                             Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = accentColor)
                         }
                         IconButton(onClick = onDelete) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Gray)
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = com.example.ui.theme.TextGray)
                         }
                     }
                 } else if (task.status == DownloadStatus.ERROR) {
                     IconButton(onClick = onDelete) {
                         Icon(Icons.Default.Delete, contentDescription = "Remove", tint = Color.Red)
+                    }
+                } else {
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = "Cancel Download", tint = com.example.ui.theme.TextGray)
                     }
                 }
             }

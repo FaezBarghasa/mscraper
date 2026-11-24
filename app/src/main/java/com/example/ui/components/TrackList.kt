@@ -14,7 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
@@ -51,7 +51,7 @@ fun TrackList(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(tracks, key = { it.id }) { track ->
+        itemsIndexed(tracks, key = { index, track -> "${track.id}_$index" }) { _, track ->
             val isFav = favoriteTrackIds.contains(track.id)
             TrackListItem(
                 track = track, 
