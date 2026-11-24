@@ -298,7 +298,10 @@ fun LibraryScreen(
                                                 },
                                                 isFavorite = favoriteTrackIds.contains(track.id),
                                                 onFavoriteClick = { viewModel.toggleFavorite(track) },
-                                                onEditClick = { trackToEdit = track }
+                                                onEditClick = { trackToEdit = track },
+                                                onDismiss = {
+                                                    viewModel.deleteTrack(track)
+                                                }
                                             )
                                         }
                                     }

@@ -1,5 +1,7 @@
 package com.example.core
 
+import android.content.Context
+import android.net.Uri
 import com.example.db.TrackDao
 import com.example.model.TrackEntity
 import kotlinx.coroutines.Dispatchers
@@ -14,7 +16,10 @@ data class DuplicateGroup(
     val tracks: List<TrackEntity>
 )
 
-class DuplicateManager(private val trackDao: TrackDao) {
+class DuplicateManager(
+    private val trackDao: TrackDao,
+    private val context: Context? = null
+) {
 
     /**
      * Compute SHA-256 hash for local physical files.
@@ -75,6 +80,16 @@ class DuplicateManager(private val trackDao: TrackDao) {
         group.tracks.forEach { track ->
             if (track.id != trackToKeep.id) {
                 trackDao.deleteTrackById(track.id)
+                try {
+                    if (track.filePath.startsWith("content://") && context != null) {
+                        context.contentResolver.delete(Uri.parse(track.filePath), null, null)
+                    } else {
+                        val f = File(track.filePath)
+                        if (f.exists()) {
+                            f.delete()
+                        }
+                    }
+                } catch (_: Exception) {}
             }
         }
     }

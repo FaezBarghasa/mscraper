@@ -35,8 +35,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     // Engines & Services (Phases 1, 2, 4, 5, 6)
     val downloadManager = com.example.core.DownloadManager(trackDao, viewModelScope, application)
-    val libraryScanner = com.example.core.LibraryScanner(trackDao)
-    val duplicateManager = com.example.core.DuplicateManager(trackDao)
+    val libraryScanner = com.example.core.LibraryScanner(trackDao, application)
+    val duplicateManager = com.example.core.DuplicateManager(trackDao, application)
     val sharingService = com.example.core.SharingService(application)
     val backupSyncService = com.example.core.BackupSyncService(application)
     val settingsManager = com.example.core.SettingsManager(application)
@@ -939,6 +939,22 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             if (_selectedPlaylist.value?.id == playlistId) {
                 _selectedPlaylist.value = null
             }
+        }
+    }
+
+    fun deleteTrack(track: Track) {
+        viewModelScope.launch(Dispatchers.IO) {
+            trackDao.deleteTrackById(track.id)
+            try {
+                if (track.filePath.startsWith("content://")) {
+                    getApplication<Application>().contentResolver.delete(android.net.Uri.parse(track.filePath), null, null)
+                } else {
+                    val file = java.io.File(track.filePath)
+                    if (file.exists()) {
+                        file.delete()
+                    }
+                }
+            } catch (_: Exception) {}
         }
     }
 

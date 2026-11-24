@@ -3,11 +3,32 @@ use crate::data::extractors::youtube::YouTubeExtractor;
 use crate::network::quic_client::QuicClient;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::sync::{Arc, LazyLock, RwLock};
+use std::sync::{Arc, RwLock};
 
-static GLOBAL_QUIC_CLIENT: LazyLock<Arc<QuicClient>> = LazyLock::new(|| {
-    Arc::new(QuicClient::new().expect("Failed to initialize persistent QuicClient"))
-});
+static GLOBAL_QUIC_CLIENT: RwLock<Option<Arc<QuicClient>>> = RwLock::new(None);
+
+fn get_or_init_quic_client() -> Result<Arc<QuicClient>, EngineError> {
+    if let Ok(guard) = GLOBAL_QUIC_CLIENT.read() {
+        if let Some(client) = guard.as_ref() {
+            return Ok(Arc::clone(client));
+        }
+    }
+
+    let mut write_guard = GLOBAL_QUIC_CLIENT
+        .write()
+        .map_err(|e| EngineError::Generic(format!("Lock poisoning: {e}")))?;
+
+    if let Some(client) = write_guard.as_ref() {
+        return Ok(Arc::clone(client));
+    }
+
+    let client = Arc::new(
+        QuicClient::new()
+            .map_err(|e| EngineError::Network(format!("Failed to initialize QuicClient: {e}")))?,
+    );
+    *write_guard = Some(Arc::clone(&client));
+    Ok(client)
+}
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum EngineError {
@@ -219,7 +240,8 @@ impl MmDlpApi {
         let file_name = format!("track_{}.{}", sanitized_id, ext);
         let file_path = PathBuf::from(temp_dir).join(&file_name);
 
-        GLOBAL_QUIC_CLIENT
+        let client = get_or_init_quic_client()?;
+        client
             .stream_to_file(&stream_url, &file_path, enable_quic)
             .await
             .map_err(|e| EngineError::Network(format!("Failed to stream audio payload: {e}")))?;
