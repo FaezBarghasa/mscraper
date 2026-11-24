@@ -31,13 +31,6 @@ import java.nio.charset.CodingErrorAction
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.coroutines.resume
-import kotlinx.coroutines.CancellableContinuation
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 
 // This is a helper for safely working with byte buffers returned from the Rust code.
 // A rust-owned buffer is represented by its capacity, its current length, and a
@@ -643,17 +636,19 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
         uniffiCheckApiChecksums(this)
     }
-    external fun uniffi_mm_dlp_core_checksum_func_hello_world(
+    external fun uniffi_mm_dlp_core_checksum_method_mmdlpapi_download_track(
     ): Int
-    external fun uniffi_mm_dlp_core_checksum_method_mmdlpengine_download_track(
+    external fun uniffi_mm_dlp_core_checksum_method_mmdlpapi_export_playlist_json(
     ): Int
-    external fun uniffi_mm_dlp_core_checksum_method_mmdlpengine_set_network_config(
+    external fun uniffi_mm_dlp_core_checksum_method_mmdlpapi_export_playlist_xml(
     ): Int
-    external fun uniffi_mm_dlp_core_checksum_method_ytmusicscraper_search_tracks(
+    external fun uniffi_mm_dlp_core_checksum_method_mmdlpapi_import_playlist_json(
     ): Int
-    external fun uniffi_mm_dlp_core_checksum_constructor_mmdlpengine_new(
+    external fun uniffi_mm_dlp_core_checksum_method_mmdlpapi_search(
     ): Int
-    external fun uniffi_mm_dlp_core_checksum_constructor_ytmusicscraper_new(
+    external fun uniffi_mm_dlp_core_checksum_method_mmdlpapi_set_network_config(
+    ): Int
+    external fun uniffi_mm_dlp_core_checksum_constructor_mmdlpapi_new(
     ): Int
     external fun ffi_mm_dlp_core_uniffi_contract_version(
     ): Int
@@ -673,26 +668,24 @@ internal object UniffiLib {
         Native.register(UniffiLib::class.java, findLibraryName(componentName = "mm_dlp_core"))
         
     }
-    external fun uniffi_mm_dlp_core_fn_clone_mmdlpengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_mm_dlp_core_fn_clone_mmdlpapi(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
-    external fun uniffi_mm_dlp_core_fn_free_mmdlpengine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_mm_dlp_core_fn_free_mmdlpapi(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    external fun uniffi_mm_dlp_core_fn_constructor_mmdlpengine_new(uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_mm_dlp_core_fn_constructor_mmdlpapi_new(uniffi_out_err: UniffiRustCallStatus, 
     ): Long
-    external fun uniffi_mm_dlp_core_fn_method_mmdlpengine_download_track(`ptr`: Long,`url`: RustBuffer.ByValue,`quality`: RustBuffer.ByValue,`format`: RustBuffer.ByValue,`tempDir`: RustBuffer.ByValue,
-    ): Long
-    external fun uniffi_mm_dlp_core_fn_method_mmdlpengine_set_network_config(`ptr`: Long,`enableQuic`: Byte,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
-    external fun uniffi_mm_dlp_core_fn_clone_ytmusicscraper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Long
-    external fun uniffi_mm_dlp_core_fn_free_ytmusicscraper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
-    external fun uniffi_mm_dlp_core_fn_constructor_ytmusicscraper_new(uniffi_out_err: UniffiRustCallStatus, 
-    ): Long
-    external fun uniffi_mm_dlp_core_fn_method_ytmusicscraper_search_tracks(`ptr`: Long,`query`: RustBuffer.ByValue,
-    ): Long
-    external fun uniffi_mm_dlp_core_fn_func_hello_world(uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_download_track(`ptr`: Long,`url`: RustBuffer.ByValue,`quality`: RustBuffer.ByValue,`format`: RustBuffer.ByValue,`tempDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_export_playlist_json(`ptr`: Long,`playlist`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_export_playlist_xml(`ptr`: Long,`playlist`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_import_playlist_json(`ptr`: Long,`json`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_search(`ptr`: Long,`query`: RustBuffer.ByValue,`source`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_set_network_config(`ptr`: Long,`enableQuic`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun ffi_mm_dlp_core_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun ffi_mm_dlp_core_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -812,22 +805,25 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
 }
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
-    if (lib.uniffi_mm_dlp_core_checksum_func_hello_world() != 42006) {
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_download_track() != 17167) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpengine_download_track() != 11177) {
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_export_playlist_json() != 27077) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpengine_set_network_config() != 62542) {
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_export_playlist_xml() != 34211) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mm_dlp_core_checksum_method_ytmusicscraper_search_tracks() != 26813) {
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_import_playlist_json() != 21744) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mm_dlp_core_checksum_constructor_mmdlpengine_new() != 58583) {
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_search() != 55089) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mm_dlp_core_checksum_constructor_ytmusicscraper_new() != 51685) {
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_set_network_config() != 22042) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_mm_dlp_core_checksum_constructor_mmdlpapi_new() != 41840) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -843,46 +839,6 @@ public fun uniffiEnsureInitialized() {
 }
 
 // Async support
-// Async return type handlers
-
-internal const val UNIFFI_RUST_FUTURE_POLL_READY = 0.toByte()
-internal const val UNIFFI_RUST_FUTURE_POLL_WAKE = 1.toByte()
-
-internal val uniffiContinuationHandleMap = UniffiHandleMap<CancellableContinuation<Byte>>()
-
-// FFI type for Rust future continuations
-internal object uniffiRustFutureContinuationCallbackImpl: UniffiRustFutureContinuationCallback {
-    override fun callback(data: Long, pollResult: Byte) {
-        uniffiContinuationHandleMap.remove(data).resume(pollResult)
-    }
-}
-
-internal suspend fun<T, F, E: kotlin.Exception> uniffiRustCallAsync(
-    rustFuture: Long,
-    pollFunc: (Long, UniffiRustFutureContinuationCallback, Long) -> Unit,
-    completeFunc: (Long, UniffiRustCallStatus) -> F,
-    freeFunc: (Long) -> Unit,
-    liftFunc: (F) -> T,
-    errorHandler: UniffiRustCallStatusErrorHandler<E>
-): T {
-    try {
-        do {
-            val pollResult = suspendCancellableCoroutine<Byte> { continuation ->
-                pollFunc(
-                    rustFuture,
-                    uniffiRustFutureContinuationCallbackImpl,
-                    uniffiContinuationHandleMap.insert(continuation)
-                )
-            }
-        } while (pollResult != UNIFFI_RUST_FUTURE_POLL_READY);
-
-        return liftFunc(
-            uniffiRustCallWithError(errorHandler, { status -> completeFunc(rustFuture, status) })
-        )
-    } finally {
-        freeFunc(rustFuture)
-    }
-}
 
 // Public interface members begin here.
 
@@ -1030,23 +986,23 @@ private class JavaLangRefCleanable(
 /**
  * @suppress
  */
-public object FfiConverterInt: FfiConverter<Int, Int> {
-    override fun lift(value: Int): Int {
-        return value
+public object FfiConverterULong: FfiConverter<ULong, Long> {
+    override fun lift(value: Long): ULong {
+        return value.toULong()
     }
 
-    override fun read(buf: ByteBuffer): Int {
-        return buf.getInt()
+    override fun read(buf: ByteBuffer): ULong {
+        return lift(buf.getLong())
     }
 
-    override fun lower(value: Int): Int {
-        return value
+    override fun lower(value: ULong): Long {
+        return value.toLong()
     }
 
-    override fun allocationSize(value: Int) = 4UL
+    override fun allocationSize(value: ULong) = 8UL
 
-    override fun write(value: Int, buf: ByteBuffer) {
-        buf.putInt(value)
+    override fun write(value: ULong, buf: ByteBuffer) {
+        buf.putLong(value.toLong())
     }
 }
 
@@ -1226,16 +1182,24 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
 //
 
 
-public interface MmDlpEngineInterface {
+public interface MmDlpApiInterface {
     
-    suspend fun `downloadTrack`(`url`: kotlin.String, `quality`: kotlin.String, `format`: kotlin.String, `tempDir`: kotlin.String): kotlin.String
+    fun `downloadTrack`(`url`: kotlin.String, `quality`: AudioQuality, `format`: AudioFormat, `tempDir`: kotlin.String): kotlin.String
+    
+    fun `exportPlaylistJson`(`playlist`: Playlist): kotlin.String
+    
+    fun `exportPlaylistXml`(`playlist`: Playlist): kotlin.String
+    
+    fun `importPlaylistJson`(`json`: kotlin.String): Playlist
+    
+    fun `search`(`query`: kotlin.String, `source`: AudioSource): List<TrackMetadata>
     
     fun `setNetworkConfig`(`enableQuic`: kotlin.Boolean)
     
     companion object
 }
 
-open class MmDlpEngine: Disposable, AutoCloseable, MmDlpEngineInterface
+open class MmDlpApi: Disposable, AutoCloseable, MmDlpApiInterface
 {
 
     @Suppress("UNUSED_PARAMETER")
@@ -1262,7 +1226,7 @@ open class MmDlpEngine: Disposable, AutoCloseable, MmDlpEngineInterface
     constructor() :
         this(UniffiWithHandle, 
     uniffiRustCall() { _status ->
-    UniffiLib.uniffi_mm_dlp_core_fn_constructor_mmdlpengine_new(
+    UniffiLib.uniffi_mm_dlp_core_fn_constructor_mmdlpapi_new(
     
         _status)
 }
@@ -1322,7 +1286,7 @@ open class MmDlpEngine: Disposable, AutoCloseable, MmDlpEngineInterface
                 return;
             }
             uniffiRustCall { status ->
-                UniffiLib.uniffi_mm_dlp_core_fn_free_mmdlpengine(handle, status)
+                UniffiLib.uniffi_mm_dlp_core_fn_free_mmdlpapi(handle, status)
             }
         }
     }
@@ -1335,36 +1299,85 @@ open class MmDlpEngine: Disposable, AutoCloseable, MmDlpEngineInterface
             throw InternalException("uniffiCloneHandle() called on NoHandle object");
         }
         return uniffiRustCall() { status ->
-            UniffiLib.uniffi_mm_dlp_core_fn_clone_mmdlpengine(handle, status)
+            UniffiLib.uniffi_mm_dlp_core_fn_clone_mmdlpapi(handle, status)
         }
     }
 
     
-    @Throws(EngineException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `downloadTrack`(`url`: kotlin.String, `quality`: kotlin.String, `format`: kotlin.String, `tempDir`: kotlin.String) : kotlin.String {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpengine_download_track(
-                uniffiHandle,
-                FfiConverterString.lower(`url`),FfiConverterString.lower(`quality`),FfiConverterString.lower(`format`),FfiConverterString.lower(`tempDir`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_poll_rust_buffer(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_complete_rust_buffer(future, continuation) },
-        { future -> UniffiLib.ffi_mm_dlp_core_rust_future_free_rust_buffer(future) },
-        // lift function
-        { FfiConverterString.lift(it) },
-        // Error FFI converter
-        EngineException.ErrorHandler,
+    @Throws(EngineException::class)override fun `downloadTrack`(`url`: kotlin.String, `quality`: AudioQuality, `format`: AudioFormat, `tempDir`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_download_track(
+        it,
+        FfiConverterString.lower(`url`),FfiConverterTypeAudioQuality.lower(`quality`),FfiConverterTypeAudioFormat.lower(`format`),FfiConverterString.lower(`tempDir`),_status)
+}
+    }
     )
     }
+    
+
+    
+    @Throws(EngineException::class)override fun `exportPlaylistJson`(`playlist`: Playlist): kotlin.String {
+            return FfiConverterString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_export_playlist_json(
+        it,
+        FfiConverterTypePlaylist.lower(`playlist`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(EngineException::class)override fun `exportPlaylistXml`(`playlist`: Playlist): kotlin.String {
+            return FfiConverterString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_export_playlist_xml(
+        it,
+        FfiConverterTypePlaylist.lower(`playlist`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(EngineException::class)override fun `importPlaylistJson`(`json`: kotlin.String): Playlist {
+            return FfiConverterTypePlaylist.lift(
+    callWithHandle {
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_import_playlist_json(
+        it,
+        FfiConverterString.lower(`json`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(EngineException::class)override fun `search`(`query`: kotlin.String, `source`: AudioSource): List<TrackMetadata> {
+            return FfiConverterSequenceTypeTrackMetadata.lift(
+    callWithHandle {
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_search(
+        it,
+        FfiConverterString.lower(`query`),FfiConverterTypeAudioSource.lower(`source`),_status)
+}
+    }
+    )
+    }
+    
 
     override fun `setNetworkConfig`(`enableQuic`: kotlin.Boolean)
         = 
     callWithHandle {
     uniffiRustCall() { _status ->
-    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpengine_set_network_config(
+    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_set_network_config(
         it,
         FfiConverterBoolean.lower(`enableQuic`),_status)
 }
@@ -1390,304 +1403,93 @@ open class MmDlpEngine: Disposable, AutoCloseable, MmDlpEngineInterface
 /**
  * @suppress
  */
-public object FfiConverterTypeMmDlpEngine: FfiConverter<MmDlpEngine, Long> {
-    override fun lower(value: MmDlpEngine): Long {
+public object FfiConverterTypeMmDlpApi: FfiConverter<MmDlpApi, Long> {
+    override fun lower(value: MmDlpApi): Long {
         return value.uniffiCloneHandle()
     }
 
-    override fun lift(value: Long): MmDlpEngine {
-        return MmDlpEngine(UniffiWithHandle, value)
+    override fun lift(value: Long): MmDlpApi {
+        return MmDlpApi(UniffiWithHandle, value)
     }
 
-    override fun read(buf: ByteBuffer): MmDlpEngine {
+    override fun read(buf: ByteBuffer): MmDlpApi {
         return lift(buf.getLong())
     }
 
-    override fun allocationSize(value: MmDlpEngine) = 8UL
+    override fun allocationSize(value: MmDlpApi) = 8UL
 
-    override fun write(value: MmDlpEngine, buf: ByteBuffer) {
+    override fun write(value: MmDlpApi, buf: ByteBuffer) {
         buf.putLong(lower(value))
     }
 }
 
 
-// This template implements a class for working with a Rust struct via a handle
-// to the live Rust struct on the other side of the FFI.
-//
-// There's some subtlety here, because we have to be careful not to operate on a Rust
-// struct after it has been dropped, and because we must expose a public API for freeing
-// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
-//
-//   * Each instance holds an opaque handle to the underlying Rust struct.
-//     Method calls need to read this handle from the object's state and pass it in to
-//     the Rust FFI.
-//
-//   * When an instance is no longer needed, its handle should be passed to a
-//     special destructor function provided by the Rust FFI, which will drop the
-//     underlying Rust struct.
-//
-//   * Given an instance, calling code is expected to call the special
-//     `destroy` method in order to free it after use, either by calling it explicitly
-//     or by using a higher-level helper like the `use` method. Failing to do so risks
-//     leaking the underlying Rust struct.
-//
-//   * We can't assume that calling code will do the right thing, and must be prepared
-//     to handle Kotlin method calls executing concurrently with or even after a call to
-//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
-//
-//   * We must never allow Rust code to operate on the underlying Rust struct after
-//     the destructor has been called, and must never call the destructor more than once.
-//     Doing so may trigger memory unsafety.
-//
-//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
-//     is implemented to call the destructor when the Kotlin object becomes unreachable.
-//     This is done in a background thread. This is not a panacea, and client code should be aware that
-//      1. the thread may starve if some there are objects that have poorly performing
-//     `drop` methods or do significant work in their `drop` methods.
-//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
-//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
-//
-// If we try to implement this with mutual exclusion on access to the handle, there is the
-// possibility of a race between a method call and a concurrent call to `destroy`:
-//
-//    * Thread A starts a method call, reads the value of the handle, but is interrupted
-//      before it can pass the handle over the FFI to Rust.
-//    * Thread B calls `destroy` and frees the underlying Rust struct.
-//    * Thread A resumes, passing the already-read handle value to Rust and triggering
-//      a use-after-free.
-//
-// One possible solution would be to use a `ReadWriteLock`, with each method call taking
-// a read lock (and thus allowed to run concurrently) and the special `destroy` method
-// taking a write lock (and thus blocking on live method calls). However, we aim not to
-// generate methods with any hidden blocking semantics, and a `destroy` method that might
-// block if called incorrectly seems to meet that bar.
-//
-// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
-// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
-// has been called. These are updated according to the following rules:
-//
-//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
-//      The initial value for the flag is false.
-//
-//    * At the start of each method call, we atomically check the counter.
-//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
-//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
-//
-//    * At the end of each method call, we atomically decrement and check the counter.
-//      If it has reached zero then we destroy the underlying Rust struct.
-//
-//    * When `destroy` is called, we atomically flip the flag from false to true.
-//      If the flag was already true we silently fail.
-//      Otherwise we atomically decrement and check the counter.
-//      If it has reached zero then we destroy the underlying Rust struct.
-//
-// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
-// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
-//
-// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
-// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
-// of the underlying Rust code.
-//
-// This makes a cleaner a better alternative to _not_ calling `destroy()` as
-// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
-// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
-// thread may be starved, and the app will leak memory.
-//
-// In this case, `destroy`ing manually may be a better solution.
-//
-// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
-// with Rust peers are reclaimed:
-//
-// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
-// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
-// 3. The memory is reclaimed when the process terminates.
-//
-// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
-//
 
-
-public interface YtMusicScraperInterface {
+data class Playlist (
+    var `id`: kotlin.String
+    , 
+    var `name`: kotlin.String
+    , 
+    var `description`: kotlin.String?
+    , 
+    var `tracks`: List<Track>
+    , 
+    var `source`: AudioSource
     
-    suspend fun `searchTracks`(`query`: kotlin.String): List<Track>
+){
     
-    companion object
-}
-
-open class YtMusicScraper: Disposable, AutoCloseable, YtMusicScraperInterface
-{
-
-    @Suppress("UNUSED_PARAMETER")
-    /**
-     * @suppress
-     */
-    constructor(withHandle: UniffiWithHandle, handle: Long) {
-        this.handle = handle
-        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
-    }
-
-    /**
-     * @suppress
-     *
-     * This constructor can be used to instantiate a fake object. Only used for tests. Any
-     * attempt to actually use an object constructed this way will fail as there is no
-     * connected Rust object.
-     */
-    @Suppress("UNUSED_PARAMETER")
-    constructor(noHandle: NoHandle) {
-        this.handle = 0
-        this.cleanable = null
-    }
-    constructor() :
-        this(UniffiWithHandle, 
-    uniffiRustCall() { _status ->
-    UniffiLib.uniffi_mm_dlp_core_fn_constructor_ytmusicscraper_new(
-    
-        _status)
-}
-    )
-
-    protected val handle: Long
-    protected val cleanable: UniffiCleaner.Cleanable?
-
-    private val wasDestroyed = AtomicBoolean(false)
-    private val callCounter = AtomicLong(1)
-
-    override fun destroy() {
-        // Only allow a single call to this method.
-        // TODO: maybe we should log a warning if called more than once?
-        if (this.wasDestroyed.compareAndSet(false, true)) {
-            // This decrement always matches the initial count of 1 given at creation time.
-            if (this.callCounter.decrementAndGet() == 0L) {
-                cleanable?.clean()
-            }
-        }
-    }
-
-    @Synchronized
-    override fun close() {
-        this.destroy()
-    }
-
-    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
-        // Check and increment the call counter, to keep the object alive.
-        // This needs a compare-and-set retry loop in case of concurrent updates.
-        do {
-            val c = this.callCounter.get()
-            if (c == 0L) {
-                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
-            }
-            if (c == Long.MAX_VALUE) {
-                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
-            }
-        } while (! this.callCounter.compareAndSet(c, c + 1L))
-        // Now we can safely do the method call without the handle being freed concurrently.
-        try {
-            return block(this.uniffiCloneHandle())
-        } finally {
-            // This decrement always matches the increment we performed above.
-            if (this.callCounter.decrementAndGet() == 0L) {
-                cleanable?.clean()
-            }
-        }
-    }
-
-    // Use a static inner class instead of a closure so as not to accidentally
-    // capture `this` as part of the cleanable's action.
-    private class UniffiCleanAction(private val handle: Long) : Runnable {
-        override fun run() {
-            if (handle == 0.toLong()) {
-                // Fake object created with `NoHandle`, don't try to free.
-                return;
-            }
-            uniffiRustCall { status ->
-                UniffiLib.uniffi_mm_dlp_core_fn_free_ytmusicscraper(handle, status)
-            }
-        }
-    }
-
-    /**
-     * @suppress
-     */
-    fun uniffiCloneHandle(): Long {
-        if (handle == 0.toLong()) {
-            throw InternalException("uniffiCloneHandle() called on NoHandle object");
-        }
-        return uniffiRustCall() { status ->
-            UniffiLib.uniffi_mm_dlp_core_fn_clone_ytmusicscraper(handle, status)
-        }
-    }
-
-    
-    @Throws(ScraperException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `searchTracks`(`query`: kotlin.String) : List<Track> {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_mm_dlp_core_fn_method_ytmusicscraper_search_tracks(
-                uniffiHandle,
-                FfiConverterString.lower(`query`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_poll_rust_buffer(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_mm_dlp_core_rust_future_complete_rust_buffer(future, continuation) },
-        { future -> UniffiLib.ffi_mm_dlp_core_rust_future_free_rust_buffer(future) },
-        // lift function
-        { FfiConverterSequenceTypeTrack.lift(it) },
-        // Error FFI converter
-        ScraperException.ErrorHandler,
-    )
-    }
 
     
 
     
-
-
-    
-    
-    /**
-     * @suppress
-     */
     companion object
-    
 }
-
 
 /**
  * @suppress
  */
-public object FfiConverterTypeYtMusicScraper: FfiConverter<YtMusicScraper, Long> {
-    override fun lower(value: YtMusicScraper): Long {
-        return value.uniffiCloneHandle()
+public object FfiConverterTypePlaylist: FfiConverterRustBuffer<Playlist> {
+    override fun read(buf: ByteBuffer): Playlist {
+        return Playlist(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterSequenceTypeTrack.read(buf),
+            FfiConverterTypeAudioSource.read(buf),
+        )
     }
 
-    override fun lift(value: Long): YtMusicScraper {
-        return YtMusicScraper(UniffiWithHandle, value)
-    }
+    override fun allocationSize(value: Playlist) = (
+            FfiConverterString.allocationSize(value.`id`) +
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterOptionalString.allocationSize(value.`description`) +
+            FfiConverterSequenceTypeTrack.allocationSize(value.`tracks`) +
+            FfiConverterTypeAudioSource.allocationSize(value.`source`)
+    )
 
-    override fun read(buf: ByteBuffer): YtMusicScraper {
-        return lift(buf.getLong())
-    }
-
-    override fun allocationSize(value: YtMusicScraper) = 8UL
-
-    override fun write(value: YtMusicScraper, buf: ByteBuffer) {
-        buf.putLong(lower(value))
+    override fun write(value: Playlist, buf: ByteBuffer) {
+            FfiConverterString.write(value.`id`, buf)
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterOptionalString.write(value.`description`, buf)
+            FfiConverterSequenceTypeTrack.write(value.`tracks`, buf)
+            FfiConverterTypeAudioSource.write(value.`source`, buf)
     }
 }
 
 
 
 data class Track (
-    var `videoId`: kotlin.String
+    var `id`: kotlin.String
     , 
     var `title`: kotlin.String
     , 
-    var `artists`: List<kotlin.String>
+    var `artist`: kotlin.String
     , 
-    var `durationSeconds`: kotlin.Int
+    var `album`: kotlin.String?
     , 
-    var `coverUrl`: kotlin.String
+    var `sourceUrl`: kotlin.String
+    , 
+    var `duration`: kotlin.ULong
     
 ){
     
@@ -1706,28 +1508,195 @@ public object FfiConverterTypeTrack: FfiConverterRustBuffer<Track> {
         return Track(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
-            FfiConverterSequenceString.read(buf),
-            FfiConverterInt.read(buf),
             FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterULong.read(buf),
         )
     }
 
     override fun allocationSize(value: Track) = (
-            FfiConverterString.allocationSize(value.`videoId`) +
+            FfiConverterString.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`title`) +
-            FfiConverterSequenceString.allocationSize(value.`artists`) +
-            FfiConverterInt.allocationSize(value.`durationSeconds`) +
-            FfiConverterString.allocationSize(value.`coverUrl`)
+            FfiConverterString.allocationSize(value.`artist`) +
+            FfiConverterOptionalString.allocationSize(value.`album`) +
+            FfiConverterString.allocationSize(value.`sourceUrl`) +
+            FfiConverterULong.allocationSize(value.`duration`)
     )
 
     override fun write(value: Track, buf: ByteBuffer) {
-            FfiConverterString.write(value.`videoId`, buf)
+            FfiConverterString.write(value.`id`, buf)
             FfiConverterString.write(value.`title`, buf)
-            FfiConverterSequenceString.write(value.`artists`, buf)
-            FfiConverterInt.write(value.`durationSeconds`, buf)
-            FfiConverterString.write(value.`coverUrl`, buf)
+            FfiConverterString.write(value.`artist`, buf)
+            FfiConverterOptionalString.write(value.`album`, buf)
+            FfiConverterString.write(value.`sourceUrl`, buf)
+            FfiConverterULong.write(value.`duration`, buf)
     }
 }
+
+
+
+data class TrackMetadata (
+    var `title`: kotlin.String
+    , 
+    var `artist`: kotlin.String
+    , 
+    var `album`: kotlin.String?
+    , 
+    var `albumArtUrl`: kotlin.String?
+    , 
+    var `trackId`: kotlin.String
+    , 
+    var `source`: AudioSource
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeTrackMetadata: FfiConverterRustBuffer<TrackMetadata> {
+    override fun read(buf: ByteBuffer): TrackMetadata {
+        return TrackMetadata(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterTypeAudioSource.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: TrackMetadata) = (
+            FfiConverterString.allocationSize(value.`title`) +
+            FfiConverterString.allocationSize(value.`artist`) +
+            FfiConverterOptionalString.allocationSize(value.`album`) +
+            FfiConverterOptionalString.allocationSize(value.`albumArtUrl`) +
+            FfiConverterString.allocationSize(value.`trackId`) +
+            FfiConverterTypeAudioSource.allocationSize(value.`source`)
+    )
+
+    override fun write(value: TrackMetadata, buf: ByteBuffer) {
+            FfiConverterString.write(value.`title`, buf)
+            FfiConverterString.write(value.`artist`, buf)
+            FfiConverterOptionalString.write(value.`album`, buf)
+            FfiConverterOptionalString.write(value.`albumArtUrl`, buf)
+            FfiConverterString.write(value.`trackId`, buf)
+            FfiConverterTypeAudioSource.write(value.`source`, buf)
+    }
+}
+
+
+
+
+enum class AudioFormat {
+    
+    FLAC,
+    WAV,
+    MP3;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeAudioFormat: FfiConverterRustBuffer<AudioFormat> {
+    override fun read(buf: ByteBuffer) = try {
+        AudioFormat.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: AudioFormat) = 4UL
+
+    override fun write(value: AudioFormat, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+
+enum class AudioQuality {
+    
+    LOW,
+    MEDIUM,
+    HIGH,
+    LOSSLESS;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeAudioQuality: FfiConverterRustBuffer<AudioQuality> {
+    override fun read(buf: ByteBuffer) = try {
+        AudioQuality.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: AudioQuality) = 4UL
+
+    override fun write(value: AudioQuality, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+
+enum class AudioSource {
+    
+    YOU_TUBE_MUSIC,
+    SOUND_CLOUD,
+    SPOTIFY;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeAudioSource: FfiConverterRustBuffer<AudioSource> {
+    override fun read(buf: ByteBuffer) = try {
+        AudioSource.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: AudioSource) = 4UL
+
+    override fun write(value: AudioSource, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
 
 
 
@@ -1736,6 +1705,30 @@ public object FfiConverterTypeTrack: FfiConverterRustBuffer<Track> {
 sealed class EngineException: kotlin.Exception() {
     
     class Generic(
+        
+        val v1: kotlin.String
+        ) : EngineException() {
+        override val message
+            get() = "v1=${ v1 }"
+    }
+    
+    class Io(
+        
+        val v1: kotlin.String
+        ) : EngineException() {
+        override val message
+            get() = "v1=${ v1 }"
+    }
+    
+    class Network(
+        
+        val v1: kotlin.String
+        ) : EngineException() {
+        override val message
+            get() = "v1=${ v1 }"
+    }
+    
+    class Serialization(
         
         val v1: kotlin.String
         ) : EngineException() {
@@ -1765,6 +1758,15 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
             1 -> EngineException.Generic(
                 FfiConverterString.read(buf),
                 )
+            2 -> EngineException.Io(
+                FfiConverterString.read(buf),
+                )
+            3 -> EngineException.Network(
+                FfiConverterString.read(buf),
+                )
+            4 -> EngineException.Serialization(
+                FfiConverterString.read(buf),
+                )
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
         }
     }
@@ -1772,6 +1774,21 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
     override fun allocationSize(value: EngineException): ULong {
         return when(value) {
             is EngineException.Generic -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.v1)
+            )
+            is EngineException.Io -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.v1)
+            )
+            is EngineException.Network -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.v1)
+            )
+            is EngineException.Serialization -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
                 + FfiConverterString.allocationSize(value.v1)
@@ -1786,89 +1803,21 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
                 FfiConverterString.write(value.v1, buf)
                 Unit
             }
-        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
-    }
-
-}
-
-
-
-
-
-sealed class ScraperException: kotlin.Exception() {
-    
-    class Network(
-        
-        val v1: kotlin.String
-        ) : ScraperException() {
-        override val message
-            get() = "v1=${ v1 }"
-    }
-    
-    class Other(
-        
-        val v1: kotlin.String
-        ) : ScraperException() {
-        override val message
-            get() = "v1=${ v1 }"
-    }
-    
-
-    
-
-
-    companion object ErrorHandler : UniffiRustCallStatusErrorHandler<ScraperException> {
-        override fun lift(error_buf: RustBuffer.ByValue): ScraperException = FfiConverterTypeScraperError.lift(error_buf)
-    }
-
-    
-}
-
-/**
- * @suppress
- */
-public object FfiConverterTypeScraperError : FfiConverterRustBuffer<ScraperException> {
-    override fun read(buf: ByteBuffer): ScraperException {
-        
-
-        return when(buf.getInt()) {
-            1 -> ScraperException.Network(
-                FfiConverterString.read(buf),
-                )
-            2 -> ScraperException.Other(
-                FfiConverterString.read(buf),
-                )
-            else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
-        }
-    }
-
-    override fun allocationSize(value: ScraperException): ULong {
-        return when(value) {
-            is ScraperException.Network -> (
-                // Add the size for the Int that specifies the variant plus the size needed for all fields
-                4UL
-                + FfiConverterString.allocationSize(value.v1)
-            )
-            is ScraperException.Other -> (
-                // Add the size for the Int that specifies the variant plus the size needed for all fields
-                4UL
-                + FfiConverterString.allocationSize(value.v1)
-            )
-        }
-    }
-
-    override fun write(value: ScraperException, buf: ByteBuffer) {
-        when(value) {
-            is ScraperException.Network -> {
-                buf.putInt(1)
-                FfiConverterString.write(value.v1, buf)
-                Unit
-            }
-            is ScraperException.Other -> {
+            is EngineException.Io -> {
                 buf.putInt(2)
                 FfiConverterString.write(value.v1, buf)
                 Unit
             }
+            is EngineException.Network -> {
+                buf.putInt(3)
+                FfiConverterString.write(value.v1, buf)
+                Unit
+            }
+            is EngineException.Serialization -> {
+                buf.putInt(4)
+                FfiConverterString.write(value.v1, buf)
+                Unit
+            }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
     }
 
@@ -1880,24 +1829,28 @@ public object FfiConverterTypeScraperError : FfiConverterRustBuffer<ScraperExcep
 /**
  * @suppress
  */
-public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.String>> {
-    override fun read(buf: ByteBuffer): List<kotlin.String> {
-        val len = buf.getInt()
-        return List<kotlin.String>(len) {
-            FfiConverterString.read(buf)
+public object FfiConverterOptionalString: FfiConverterRustBuffer<kotlin.String?> {
+    override fun read(buf: ByteBuffer): kotlin.String? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterString.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.String?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterString.allocationSize(value)
         }
     }
 
-    override fun allocationSize(value: List<kotlin.String>): ULong {
-        val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterString.allocationSize(it) }.sum()
-        return sizeForLength + sizeForItems
-    }
-
-    override fun write(value: List<kotlin.String>, buf: ByteBuffer) {
-        buf.putInt(value.size)
-        value.iterator().forEach {
-            FfiConverterString.write(it, buf)
+    override fun write(value: kotlin.String?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterString.write(value, buf)
         }
     }
 }
@@ -1933,18 +1886,28 @@ public object FfiConverterSequenceTypeTrack: FfiConverterRustBuffer<List<Track>>
 
 
 
-
-
-
- fun `helloWorld`(): kotlin.String {
-            return FfiConverterString.lift(
-    uniffiRustCall() { _status ->
-    UniffiLib.uniffi_mm_dlp_core_fn_func_hello_world(
-    
-        _status)
-}
-    )
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeTrackMetadata: FfiConverterRustBuffer<List<TrackMetadata>> {
+    override fun read(buf: ByteBuffer): List<TrackMetadata> {
+        val len = buf.getInt()
+        return List<TrackMetadata>(len) {
+            FfiConverterTypeTrackMetadata.read(buf)
+        }
     }
-    
 
+    override fun allocationSize(value: List<TrackMetadata>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeTrackMetadata.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<TrackMetadata>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeTrackMetadata.write(it, buf)
+        }
+    }
+}
 

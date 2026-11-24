@@ -8,13 +8,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.example.core.MmDlpApiImpl
 import com.example.data.settings.SettingsRepository
 import com.example.ui.navigation.AppNavigation
 import com.example.ui.theme.MscraperTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import uniffi.mmdlp.MmDlpEngine
 
 class MainActivity : ComponentActivity() {
@@ -27,12 +29,11 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     
-    // Initialize settings and network config
+    // Initialize settings and network config asynchronously
     val settingsRepository = SettingsRepository(this)
     val api = MmDlpApiImpl()
     
-    // Use runBlocking for initial setup before anything else starts
-    runBlocking {
+    lifecycleScope.launch(Dispatchers.IO) {
         val enableQuic = settingsRepository.enableQuic.first()
         api.setNetworkConfig(enableQuic)
     }
@@ -42,7 +43,7 @@ class MainActivity : ComponentActivity() {
         val engine = MmDlpEngine()
         engine.startBackendServer(8080.toUShort())
         android.util.Log.d("MainActivity", "Rust Actix server started on port 8080")
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         android.util.Log.e("MainActivity", "Failed to start Rust Actix server", e)
     }
 

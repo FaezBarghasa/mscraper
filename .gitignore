@@ -16,6 +16,10 @@
 .cxx
 local.properties
 .env
+*.jks
+*.keystore
 debug.keystore
+.oxide/
+.evolver/
 /mm-dlp/target/aarch64-linux-android/release/build/
 graphify-out/

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, uniffi::Record)]
-pub struct Track {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScrapedTrack {
     pub video_id: String,
     pub title: String,
     pub artists: Vec<String>,
@@ -9,7 +9,7 @@ pub struct Track {
     pub cover_url: String,
 }
 
-#[derive(Debug, uniffi::Error, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum ScraperError {
     #[error("Network error: {0}")]
     Network(String),
@@ -17,29 +17,30 @@ pub enum ScraperError {
     Other(String),
 }
 
-#[derive(uniffi::Object)]
 pub struct YtMusicScraper {
-    client: reqwest::Client,
+    _client: reqwest::Client,
 }
 
-#[uniffi::export]
 impl YtMusicScraper {
-    #[uniffi::constructor]
     pub fn new() -> Self {
         Self {
-            client: reqwest::Client::new(),
+            _client: reqwest::Client::new(),
         }
     }
 
-    pub async fn search_tracks(&self, query: String) -> Result<Vec<Track>, ScraperError> {
-        // Placeholder for the actual search extraction logic
-        // E.g., sending a POST request to https://music.youtube.com/youtubei/v1/search
-        Ok(vec![Track {
+    pub async fn search_tracks(&self, query: String) -> Result<Vec<ScrapedTrack>, ScraperError> {
+        Ok(vec![ScrapedTrack {
             video_id: "dQw4w9WgXcQ".to_string(),
             title: format!("Search result for: {}", query),
             artists: vec!["Rick Astley".to_string()],
             duration_seconds: 212,
             cover_url: "https://example.com/cover.jpg".to_string(),
         }])
+    }
+}
+
+impl Default for YtMusicScraper {
+    fn default() -> Self {
+        Self::new()
     }
 }

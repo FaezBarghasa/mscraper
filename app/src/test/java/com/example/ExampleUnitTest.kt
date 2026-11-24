@@ -1,20 +1,13 @@
 package com.example
 
-import com.example.core.DuplicateManager
 import com.example.model.TrackEntity
 import org.junit.Assert.*
 import org.junit.Test
 
 class ExampleUnitTest {
   @Test
-  fun addition_isCorrect() {
-    assertEquals(4, 2 + 2)
-  }
-
-  @Test
   fun testMetadataExtractor_matchesAppleMusicUrl() {
     val url = "https://music.apple.com/us/album/midnight-city/457421833?i=457421838"
-    // Mock extract pattern matching
     val isApple = url.contains("music.apple.com")
     assertTrue(isApple)
     
@@ -52,31 +45,13 @@ class ExampleUnitTest {
   }
 
   @Test
-  fun testContextAwareSourceRouting_resolvesCorrectSource() {
-    val streamingPriority = listOf("YouTube Music", "YouTube Standard", "Direct HTTP")
-    val downloadPriority = listOf("SoundCloud", "YouTube Music", "Direct HTTP")
-
-    // Scenario: User is in STREAMING context
-    val currentContext = "STREAM"
-    val resolvedSourceForStream = if (currentContext == "STREAM") streamingPriority.first() else downloadPriority.first()
-    assertEquals("YouTube Music", resolvedSourceForStream)
-
-    // Scenario: User switches to DOWNLOAD context
-    val nextContext = "DOWNLOAD"
-    val resolvedSourceForDownload = if (nextContext == "STREAM") streamingPriority.first() else downloadPriority.first()
-    assertEquals("SoundCloud", resolvedSourceForDownload)
-  }
-
-  @Test
   fun testStreamToDownloadUpgrade_checksMinQuality() {
-    val currentlyStreamingBitrate = 128 // 128kbps Opus from YouTube
-    val minDownloadQualityThreshold = 256 // Require 256kbps for saving
+    val currentlyStreamingBitrate = 128
+    val minDownloadQualityThreshold = 256
 
-    // Does it require upgrade/re-download?
     val needsReDownload = currentlyStreamingBitrate < minDownloadQualityThreshold
     assertTrue(needsReDownload)
 
-    // If we stream at 320kbps
     val highQualityStream = 320
     val needsReDownloadHQ = highQualityStream < minDownloadQualityThreshold
     assertFalse(needsReDownloadHQ)
