@@ -844,8 +844,8 @@ fun UtilitiesTab(viewModel: MusicViewModel, accentColor: Color, secColor: Color)
                                 if (localTracks.isEmpty()) {
                                     Toast.makeText(context, "NO LOCAL TRACKS TO EXPORT", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    val m3u = viewModel.sharingService.exportToM3u("LocalPlaylist", localTracks)
-                                    Toast.makeText(context, "M3U EXPORT CREATED:\n${m3u.take(120)}...", Toast.LENGTH_LONG).show()
+                                    val file = viewModel.sharingService.exportToM3u("LocalPlaylist", localTracks)
+                                    Toast.makeText(context, "M3U EXPORT SAVED:\n${file.name}", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = accentColor),
@@ -860,8 +860,8 @@ fun UtilitiesTab(viewModel: MusicViewModel, accentColor: Color, secColor: Color)
                                 if (localTracks.isEmpty()) {
                                     Toast.makeText(context, "NO LOCAL TRACKS TO EXPORT", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    val pls = viewModel.sharingService.exportToPls("LocalPlaylist", localTracks)
-                                    Toast.makeText(context, "PLS EXPORT CREATED:\n${pls.take(120)}...", Toast.LENGTH_LONG).show()
+                                    val file = viewModel.sharingService.exportToPls("LocalPlaylist", localTracks)
+                                    Toast.makeText(context, "PLS EXPORT SAVED:\n${file.name}", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = HoloBg),
@@ -881,8 +881,8 @@ fun UtilitiesTab(viewModel: MusicViewModel, accentColor: Color, secColor: Color)
                                 if (localTracks.isEmpty()) {
                                     Toast.makeText(context, "NO LOCAL TRACKS TO EXPORT", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    val json = viewModel.sharingService.exportToJson("LocalPlaylist", localTracks)
-                                    Toast.makeText(context, "JSON EXPORT CREATED:\n${json.take(120)}...", Toast.LENGTH_LONG).show()
+                                    val file = viewModel.sharingService.exportToJson("LocalPlaylist", localTracks)
+                                    Toast.makeText(context, "JSON EXPORT SAVED:\n${file.name}", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = HoloBg),
@@ -898,8 +898,8 @@ fun UtilitiesTab(viewModel: MusicViewModel, accentColor: Color, secColor: Color)
                                 if (localTracks.isEmpty()) {
                                     Toast.makeText(context, "NO LOCAL TRACKS TO EXPORT", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    val xml = viewModel.sharingService.exportToXml("LocalPlaylist", localTracks)
-                                    Toast.makeText(context, "XML EXPORT CREATED:\n${xml.take(120)}...", Toast.LENGTH_LONG).show()
+                                    val file = viewModel.sharingService.exportToXml("LocalPlaylist", localTracks)
+                                    Toast.makeText(context, "XML EXPORT SAVED:\n${file.name}", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = HoloBg),
