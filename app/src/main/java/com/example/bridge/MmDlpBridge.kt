@@ -1,49 +1,45 @@
 package com.example.bridge
 
-import kotlinx.coroutines.channels.awaitClose
+import com.example.core.ffi.AudioFormat
+import com.example.core.ffi.AudioQuality
+import com.example.core.ffi.MmDlpApi
+import com.example.core.ffi.TrackMetadata
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import uniffi.mmdlp.*
+import kotlinx.coroutines.flow.flow
+import java.io.File
 
 sealed class DownloadEvent {
-    data class Progress(val progress: FfmpegProgress) : DownloadEvent()
+    data class Progress(val percent: Float) : DownloadEvent()
     object Complete : DownloadEvent()
-    data class Error(val exception: EngineException) : DownloadEvent()
+    data class Error(val exception: Throwable) : DownloadEvent()
 }
 
-class MmDlpBridge {
-    private val engine = MmDlpEngine()
-
-    fun extractMetadata(url: String): MediaInfo {
-        return engine.extractMetadata(url)
+class MmDlpBridge(
+    private val api: MmDlpApi = MmDlpApi()
+) {
+    fun extractMetadata(url: String): TrackMetadata {
+        return api.extractMetadata(url)
     }
 
-    fun downloadAsFlow(videoUrl: String, audioUrl: String, outputPath: String): Flow<DownloadEvent> = callbackFlow {
-        val callback = object : DownloadProgressCallback {
-            override fun onProgress(progress: FfmpegProgress) {
-                trySend(DownloadEvent.Progress(progress))
-            }
-
-            override fun onComplete() {
-                trySend(DownloadEvent.Complete)
-                close()
-            }
-
-            override fun onError(error: EngineException) {
-                trySend(DownloadEvent.Error(error))
-                close(error)
-            }
-        }
-
+    fun downloadAsFlow(url: String, outputPath: String): Flow<DownloadEvent> = flow {
+        emit(DownloadEvent.Progress(0.1f))
         try {
-            engine.downloadAndMux(videoUrl, audioUrl, outputPath, callback)
-        } catch (e: EngineException) {
-            trySend(DownloadEvent.Error(e))
-            close(e)
-        }
-
-        awaitClose {
-            // Ideally we'd have a way to cancel the download in MmDlpEngine
+            val parentDir = File(outputPath).parent ?: ""
+            val downloadedPath = api.downloadTrack(
+                url = url,
+                quality = AudioQuality.HIGH,
+                format = AudioFormat.MP3,
+                tempDir = parentDir
+            )
+            val downloadedFile = File(downloadedPath)
+            val targetFile = File(outputPath)
+            if (downloadedFile.absolutePath != targetFile.absolutePath && downloadedFile.exists()) {
+                downloadedFile.renameTo(targetFile)
+            }
+            emit(DownloadEvent.Progress(1.0f))
+            emit(DownloadEvent.Complete)
+        } catch (e: Throwable) {
+            emit(DownloadEvent.Error(e))
         }
     }
 }

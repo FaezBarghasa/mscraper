@@ -1,7 +1,7 @@
 package com.example
 
 import android.app.Application
-import uniffi.mmdlp.uniffiEnsureInitialized
+import com.example.core.ffi.uniffiEnsureInitialized
 
 class MscraperApplication : Application() {
     override fun onCreate() {

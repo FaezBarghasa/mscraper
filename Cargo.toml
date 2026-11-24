@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0"
 async-trait = "0.1.91"
 bytes = "1.12.1"
 h3 = "0.0.8"
@@ -11,6 +12,7 @@ h3-quinn = "0.0.10"
 http = "1.4.2"
 lofty = "0.24.0"
 quinn = "0.11.11"
+regex = "1.11"
 reqwest = { version = "0.13.4", features = ["json"] }
 rustls = { version = "0.23.42", features = ["ring"] }
 rustls-pki-types = "1.15.0"

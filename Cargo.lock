@@ -1295,6 +1295,7 @@ dependencies = [
 name = "mscraper"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "bytes",
  "criterion",
@@ -1303,6 +1304,7 @@ dependencies = [
  "http",
  "lofty",
  "quinn",
+ "regex",
  "reqwest",
  "rustls",
  "rustls-pki-types",

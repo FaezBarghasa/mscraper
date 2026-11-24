@@ -642,6 +642,10 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_mm_dlp_core_checksum_method_mmdlpapi_export_playlist_xml(
     ): Int
+    external fun uniffi_mm_dlp_core_checksum_method_mmdlpapi_extract_metadata(
+    ): Int
+    external fun uniffi_mm_dlp_core_checksum_method_mmdlpapi_get_stream_url(
+    ): Int
     external fun uniffi_mm_dlp_core_checksum_method_mmdlpapi_import_playlist_json(
     ): Int
     external fun uniffi_mm_dlp_core_checksum_method_mmdlpapi_search(
@@ -679,6 +683,10 @@ internal object UniffiLib {
     external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_export_playlist_json(`ptr`: Long,`playlist`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_export_playlist_xml(`ptr`: Long,`playlist`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_extract_metadata(`ptr`: Long,`url`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_get_stream_url(`ptr`: Long,`trackId`: RustBuffer.ByValue,`source`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_mm_dlp_core_fn_method_mmdlpapi_import_playlist_json(`ptr`: Long,`json`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -812,6 +820,12 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_export_playlist_xml() != 34211) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_extract_metadata() != 18899) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_get_stream_url() != 51976) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_mm_dlp_core_checksum_method_mmdlpapi_import_playlist_json() != 21744) {
@@ -1190,6 +1204,10 @@ public interface MmDlpApiInterface {
     
     fun `exportPlaylistXml`(`playlist`: Playlist): kotlin.String
     
+    fun `extractMetadata`(`url`: kotlin.String): TrackMetadata
+    
+    fun `getStreamUrl`(`trackId`: kotlin.String, `source`: AudioSource): kotlin.String
+    
     fun `importPlaylistJson`(`json`: kotlin.String): Playlist
     
     fun `search`(`query`: kotlin.String, `source`: AudioSource): List<TrackMetadata>
@@ -1339,6 +1357,34 @@ open class MmDlpApi: Disposable, AutoCloseable, MmDlpApiInterface
     UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_export_playlist_xml(
         it,
         FfiConverterTypePlaylist.lower(`playlist`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(EngineException::class)override fun `extractMetadata`(`url`: kotlin.String): TrackMetadata {
+            return FfiConverterTypeTrackMetadata.lift(
+    callWithHandle {
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_extract_metadata(
+        it,
+        FfiConverterString.lower(`url`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(EngineException::class)override fun `getStreamUrl`(`trackId`: kotlin.String, `source`: AudioSource): kotlin.String {
+            return FfiConverterString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(EngineException) { _status ->
+    UniffiLib.uniffi_mm_dlp_core_fn_method_mmdlpapi_get_stream_url(
+        it,
+        FfiConverterString.lower(`trackId`),FfiConverterTypeAudioSource.lower(`source`),_status)
 }
     }
     )
@@ -1728,6 +1774,14 @@ sealed class EngineException: kotlin.Exception() {
             get() = "v1=${ v1 }"
     }
     
+    class Extractor(
+        
+        val v1: kotlin.String
+        ) : EngineException() {
+        override val message
+            get() = "v1=${ v1 }"
+    }
+    
     class Serialization(
         
         val v1: kotlin.String
@@ -1764,7 +1818,10 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
             3 -> EngineException.Network(
                 FfiConverterString.read(buf),
                 )
-            4 -> EngineException.Serialization(
+            4 -> EngineException.Extractor(
+                FfiConverterString.read(buf),
+                )
+            5 -> EngineException.Serialization(
                 FfiConverterString.read(buf),
                 )
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
@@ -1784,6 +1841,11 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
                 + FfiConverterString.allocationSize(value.v1)
             )
             is EngineException.Network -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.v1)
+            )
+            is EngineException.Extractor -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
                 + FfiConverterString.allocationSize(value.v1)
@@ -1813,8 +1875,13 @@ public object FfiConverterTypeEngineError : FfiConverterRustBuffer<EngineExcepti
                 FfiConverterString.write(value.v1, buf)
                 Unit
             }
-            is EngineException.Serialization -> {
+            is EngineException.Extractor -> {
                 buf.putInt(4)
+                FfiConverterString.write(value.v1, buf)
+                Unit
+            }
+            is EngineException.Serialization -> {
+                buf.putInt(5)
                 FfiConverterString.write(value.v1, buf)
                 Unit
             }

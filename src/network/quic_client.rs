@@ -64,9 +64,12 @@ impl QuicClient {
         let host = uri.host().ok_or_else(|| "No host in URI".to_string())?;
         let port = uri.port_u16().unwrap_or(443);
 
-        let server_addr = format!("{}:{}", host, port)
-            .parse()
-            .map_err(|e: std::net::AddrParseError| e.to_string())?;
+        let mut addrs = tokio::net::lookup_host(format!("{}:{}", host, port))
+            .await
+            .map_err(|e| format!("DNS resolution failed for {}:{} - {}", host, port, e))?;
+        let server_addr = addrs
+            .next()
+            .ok_or_else(|| format!("No IP addresses found for {}:{}", host, port))?;
 
         let connection = self
             .endpoint

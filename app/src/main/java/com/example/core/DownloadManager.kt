@@ -25,7 +25,6 @@ class DownloadManager(
 
     private val activeJobs = mutableMapOf<String, Job>()
     private val ffiApi = com.example.core.ffi.MmDlpApi()
-    private val engine = uniffi.mmdlp.MmDlpEngine()
 
     fun startDownload(url: String, targetFormat: String, targetBitrate: String) {
         val jobId = UUID.randomUUID().toString()
@@ -44,9 +43,9 @@ class DownloadManager(
                 )
                 _jobs.update { it + initialJob }
 
-                val mediaInfo = engine.extractMetadata(url)
+                val mediaInfo = ffiApi.extractMetadata(url)
                 val title = mediaInfo.title
-                val artist = mediaInfo.uploader ?: "Unknown"
+                val artist = mediaInfo.artist
 
                 _jobs.update { list ->
                     list.map { j ->

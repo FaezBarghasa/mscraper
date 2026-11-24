@@ -17,7 +17,6 @@ import com.example.ui.theme.MscraperTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import uniffi.mmdlp.MmDlpEngine
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,21 +37,9 @@ class MainActivity : ComponentActivity() {
         api.setNetworkConfig(enableQuic)
     }
 
-    // Start local Rust Actix backend server in the background
-    try {
-        val engine = MmDlpEngine()
-        engine.startBackendServer(8080.toUShort())
-        android.util.Log.d("MainActivity", "Rust Actix server started on port 8080")
-    } catch (e: Throwable) {
-        android.util.Log.e("MainActivity", "Failed to start Rust Actix server", e)
-    }
-
     setContent {
       MscraperTheme {
-        val navController = rememberNavController()
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            AppNavigation(navController = navController)
-        }
+        com.example.navigation.MainAppScreen()
       }
     }
   }

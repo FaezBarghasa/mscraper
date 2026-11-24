@@ -12,9 +12,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.local.Song
 import com.example.data.storage.MediaStoreManager
 import com.example.util.CacheHelper
-import uniffi.mmdlp.MediaInfo
 import java.io.File
-import java.util.*
 
 class DownloadWorker(
     context: Context,
@@ -58,17 +56,12 @@ class DownloadWorker(
         return try {
             val metadata = bridge.extractMetadata(url)
             val tempFile = CacheHelper.getTempFile(applicationContext, "mp3")
-            
-            // For now, let's assume we use the first available audio format or similar
-            // In a real app, we'd pick the best one.
-            val audioUrl = metadata.formats.firstOrNull { it.acodec != null && it.vcodec == null }?.url ?: url
-            val videoUrl = "" // No video for now as we want audio extract
 
             var success = false
-            bridge.downloadAsFlow(videoUrl, audioUrl, tempFile.absolutePath).collect { event ->
+            bridge.downloadAsFlow(url, tempFile.absolutePath).collect { event ->
                 when (event) {
                     is DownloadEvent.Progress -> {
-                        val progressText = "Downloading: ${event.progress.time ?: ""}"
+                        val progressText = "Downloading: ${(event.percent * 100).toInt()}%"
                         notificationManager.notify(NOTIFICATION_ID, createNotification(progressText))
                     }
                     is DownloadEvent.Complete -> {
@@ -88,13 +81,14 @@ class DownloadWorker(
                     mediaStoreManager.finalizeFile(uri)
                     
                     val song = Song(
-                        id = metadata.id,
+                        id = metadata.trackId,
                         title = metadata.title,
-                        artist = metadata.uploader ?: "Unknown",
+                        artist = metadata.artist,
+                        album = metadata.album,
                         url = url,
                         filePath = uri.toString(),
-                        duration = metadata.duration?.toString() ?: "0",
-                        imageUrl = "", // We might want to download thumbnail too
+                        duration = "0",
+                        imageUrl = metadata.albumArtUrl ?: "",
                         isDownloaded = true
                     )
                     db.songDao().insert(song)
