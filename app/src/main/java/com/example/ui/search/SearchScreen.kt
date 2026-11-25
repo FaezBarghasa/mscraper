@@ -262,7 +262,7 @@ fun SearchScreen(
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(Brush.linearGradient(category.gradient))
                                     .clickable {
-                                        searchViewModel.updateSearchQuery(category.query)
+                                        searchViewModel.performSearchNow(category.query)
                                     }
                                     .padding(14.dp),
                                 contentAlignment = Alignment.TopStart
@@ -278,8 +278,60 @@ fun SearchScreen(
                     }
                 }
             } else if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = accentColor, strokeWidth = 2.dp)
+                // Sleek animated shimmer placeholder rows
+                val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
+                val alpha by infiniteTransition.animateFloat(
+                    initialValue = 0.2f,
+                    targetValue = 0.65f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(800, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "shimmerAlpha"
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 96.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    repeat(6) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(64.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(SurfaceElevated)
+                                .padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.White.copy(alpha = alpha))
+                            )
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.6f)
+                                        .height(14.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color.White.copy(alpha = alpha))
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.35f)
+                                        .height(11.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color.White.copy(alpha = alpha * 0.7f))
+                                )
+                            }
+                        }
+                    }
                 }
             } else if (searchResults.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -301,7 +353,8 @@ fun SearchScreen(
                     onAddToPlaylist = { track ->
                         trackToAddToPlaylist = track
                     },
-                    favoriteTrackIds = favoriteTrackIds
+                    favoriteTrackIds = favoriteTrackIds,
+                    modifier = Modifier.padding(bottom = 96.dp)
                 )
             }
         }

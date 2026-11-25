@@ -78,7 +78,13 @@ fun LibraryScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(DeepVoid).padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(ObsidianBlack)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(bottom = 96.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

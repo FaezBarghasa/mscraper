@@ -16,9 +16,11 @@ impl Default for YouTubeExtractor {
 impl YouTubeExtractor {
     pub fn new() -> Self {
         let client = Client::builder()
-            .timeout(Duration::from_secs(15))
+            .timeout(Duration::from_secs(8))
+            .connect_timeout(Duration::from_secs(4))
             .tcp_nodelay(true)
             .pool_max_idle_per_host(8)
+            .pool_idle_timeout(Duration::from_secs(30))
             .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             .build()
             .unwrap_or_default();

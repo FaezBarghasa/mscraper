@@ -30,6 +30,8 @@ class SearchViewModel(
     private val _errorMessage = MutableSharedFlow<String>()
     val errorMessage: SharedFlow<String> = _errorMessage.asSharedFlow()
 
+    private var searchJob: kotlinx.coroutines.Job? = null
+
     init {
         combine(_searchQuery, _selectedSource) { query, source ->
             query to source
@@ -54,8 +56,36 @@ class SearchViewModel(
         _selectedSource.value = source
     }
 
+    /**
+     * Immediately triggers search bypassing debounce, cancels previous running query,
+     * and sets loading indicator right away for instant feedback.
+     */
+    fun performSearchNow(query: String, source: SearchSource = _selectedSource.value) {
+        _searchQuery.value = query
+        _selectedSource.value = source
+        searchJob?.cancel()
+        if (query.isBlank()) {
+            _searchResults.value = emptyList()
+            _isLoading.value = false
+            return
+        }
+        searchJob = viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val results = api.search(query, source)
+                _searchResults.value = results
+            } catch (e: Exception) {
+                _errorMessage.emit(e.localizedMessage ?: "Network or search error")
+                _searchResults.value = emptyList()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     private fun performSearch(query: String, source: SearchSource) {
-        viewModelScope.launch {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
             _isLoading.value = true
             try {
                 val results = api.search(query, source)

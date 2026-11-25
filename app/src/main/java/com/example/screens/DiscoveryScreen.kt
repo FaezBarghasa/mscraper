@@ -138,23 +138,33 @@ fun DiscoveryScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(DeepVoid)
+            .background(ObsidianBlack)
             .verticalScroll(rememberScrollState())
+            .padding(bottom = 96.dp)
     ) {
         TopBar(accentColor, onOpenDrawer, onDownloadsClick = { navController.navigate("downloads") })
-        
+
+        // Spotify 2-Column Speed-Dial Quick Grid
+        SpeedDialGrid(
+            navController = navController,
+            viewModel = viewModel,
+            accentColor = accentColor,
+            favoriteCount = favoriteTracks.size,
+            downloadCount = 0
+        )
+
         val recentlyPlayed by viewModel.recentlyPlayed.collectAsState()
         if (recentlyPlayed.isNotEmpty()) {
             Text(
-                text = "RECENTLY PLAYED",
-                style = MaterialTheme.typography.titleSmall,
-                color = accentColor.copy(alpha = 0.6f),
+                text = "Recently played",
+                style = MaterialTheme.typography.titleMedium,
+                color = TextPrimary,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
             androidx.compose.foundation.lazy.LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.padding(bottom = 16.dp)
             ) {
                 items(recentlyPlayed) { track ->
@@ -167,18 +177,15 @@ fun DiscoveryScreen(
         }
 
         FeaturedSection(featuredTrack, navController, viewModel, accentColor)
-        
+
         Text(
-            text = "SUB-GENRES DECODERS",
-            style = MaterialTheme.typography.titleSmall,
-            color = accentColor.copy(alpha = 0.6f),
+            text = "Genres & Moods",
+            style = MaterialTheme.typography.titleMedium,
+            color = TextPrimary,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
         GenreFilterBar(selectedGenre = selectedGenre, onGenreSelected = { selectedGenre = it }, accentColor)
-        
-        // AI Playlist Generator Section (DISABLED)
-        // Spacer(modifier = Modifier.height(16.dp))
 
         TrendingSection(filteredTrending, viewModel, navController)
         NewReleasesSection(filteredReleases, viewModel, navController, accentColor)
@@ -449,6 +456,116 @@ fun GenreFilterBar(
 }
 
 @Composable
+fun SpeedDialGrid(
+    navController: NavController,
+    viewModel: MusicViewModel,
+    accentColor: Color,
+    favoriteCount: Int,
+    downloadCount: Int
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SpeedDialItem(
+                title = "Liked Songs",
+                subtitle = "$favoriteCount tracks",
+                icon = Icons.Default.Favorite,
+                gradient = listOf(Color(0xFF450AF5), Color(0xFF8E8EE5)),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("library") }
+            )
+            SpeedDialItem(
+                title = "Downloads",
+                subtitle = "Offline Vault",
+                icon = Icons.Default.Download,
+                gradient = listOf(Color(0xFF006450), Color(0xFF1DB954)),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("downloads") }
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SpeedDialItem(
+                title = "Synthwave Mix",
+                subtitle = "InnerTube Stream",
+                icon = Icons.Default.AutoAwesome,
+                gradient = listOf(Color(0xFF8B5CF6), Color(0xFFEC4899)),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate(Screen.Search.route) }
+            )
+            SpeedDialItem(
+                title = "Equalizer",
+                subtitle = "DSP Studio",
+                icon = Icons.Default.GraphicEq,
+                gradient = listOf(Color(0xFFE11D48), Color(0xFFFB923C)),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("equalizer") }
+            )
+        }
+    }
+}
+
+@Composable
+fun SpeedDialItem(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    gradient: List<Color>,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .height(56.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(SurfaceElevated)
+            .clickable { onClick() },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .background(Brush.linearGradient(gradient)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Column(modifier = Modifier.padding(end = 8.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                color = TextPrimary,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
 fun TopBar(accentColor: Color, onMenuClick: () -> Unit, onDownloadsClick: () -> Unit = {}) {
     val greeting = remember {
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
@@ -540,31 +657,38 @@ fun FeaturedSection(
                 .fillMaxWidth()
                 .padding(16.dp)
                 .height(180.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(HoloBg)
-                .border(1.dp, HoloBorder, RoundedCornerShape(24.dp))
-                .padding(24.dp),
+                .clip(RoundedCornerShape(20.dp))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            accentColor.copy(alpha = 0.22f),
+                            SurfaceElevated
+                        )
+                    )
+                )
+                .border(1.dp, HairlineBorder, RoundedCornerShape(20.dp))
+                .padding(20.dp),
             contentAlignment = Alignment.CenterStart
         ) {
             Column {
                 Text(
-                    text = "DECODER STATION",
+                    text = "Welcome to M-Scraper",
                     color = accentColor,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "AWAITING SIGNAL",
+                    text = "Discover millions of songs",
                     style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
+                    color = TextPrimary,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Import local audio files or search online streams.",
+                    text = "Search YouTube Music, SoundCloud, and offline library.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextGray
+                    color = TextSecondary
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
@@ -572,9 +696,9 @@ fun FeaturedSection(
                     colors = ButtonDefaults.buttonColors(containerColor = accentColor),
                     shape = RoundedCornerShape(20.dp)
                 ) {
-                    Icon(Icons.Filled.Search, contentDescription = null, tint = DeepVoid, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Search, contentDescription = null, tint = ObsidianBlack, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("SEARCH ONLINE", color = DeepVoid, fontWeight = FontWeight.Bold)
+                    Text("Search Music", color = ObsidianBlack, fontWeight = FontWeight.Bold)
                 }
             }
         }

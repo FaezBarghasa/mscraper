@@ -16,25 +16,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.SearchSource
-import com.example.ui.theme.HoloBg
-import com.example.ui.theme.TokyoBlue
-import com.example.ui.theme.TokyoPink
+import com.example.ui.theme.*
 
 @Composable
 fun SourceSelector(
     selectedSource: SearchSource,
     onSourceChanged: (SearchSource) -> Unit,
     modifier: Modifier = Modifier,
-    accentColor: Color = TokyoBlue
+    accentColor: Color = PrimaryAccent
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .height(48.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(HoloBg)
-            .border(1.dp, accentColor.copy(alpha = 0.3f), RoundedCornerShape(24.dp)),
+            .height(44.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(SurfaceElevated)
+            .border(1.dp, HairlineBorder, RoundedCornerShape(22.dp))
+            .padding(3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         SearchSource.entries.forEach { source ->
@@ -43,17 +41,17 @@ fun SourceSelector(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(if (isSelected) accentColor.copy(alpha = 0.2f) else Color.Transparent)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(if (isSelected) accentColor else Color.Transparent)
                     .clickable { onSourceChanged(source) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = source.displayName.uppercase(),
-                    color = if (isSelected) accentColor else Color.White.copy(alpha = 0.6f),
+                    text = source.displayName,
+                    color = if (isSelected) ObsidianBlack else TextSecondary,
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    letterSpacing = 1.sp
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    letterSpacing = 0.5.sp
                 )
             }
         }
