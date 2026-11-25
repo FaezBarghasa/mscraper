@@ -152,7 +152,7 @@ fun DiscoveryScreen(
             viewModel = viewModel,
             accentColor = accentColor,
             favoriteCount = favoriteTracks.size,
-            downloadCount = 0
+            downloadCount = synchronizedLibrary.size
         )
 
         val recentlyPlayed by viewModel.recentlyPlayed.collectAsState()
@@ -485,7 +485,7 @@ fun SpeedDialGrid(
             )
             SpeedDialItem(
                 title = "Downloads",
-                subtitle = "Offline Vault",
+                subtitle = if (downloadCount > 0) "$downloadCount tracks" else "Offline Vault",
                 icon = Icons.Default.Download,
                 gradient = listOf(Color(0xFF006450), Color(0xFF1DB954)),
                 modifier = Modifier.weight(1f),
@@ -572,9 +572,9 @@ fun TopBar(accentColor: Color, onMenuClick: () -> Unit, onDownloadsClick: () -> 
     val greeting = remember {
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         when {
-            hour < 12 -> "GOOD MORNING"
-            hour < 17 -> "GOOD AFTERNOON"
-            else -> "GOOD EVENING"
+            hour < 12 -> "Good morning"
+            hour < 17 -> "Good afternoon"
+            else -> "Good evening"
         }
     }
     Row(

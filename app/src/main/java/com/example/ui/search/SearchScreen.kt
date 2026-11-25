@@ -335,12 +335,65 @@ fun SearchScreen(
                     }
                 }
             } else if (searchResults.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "No results found",
-                        color = TextTertiary,
-                        style = MaterialTheme.typography.bodyLarge
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 96.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = TextTertiary,
+                        modifier = Modifier.size(48.dp)
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "No streams found on ${selectedSource.displayName}",
+                        color = TextPrimary,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Try searching with a different source or check your network.",
+                        color = TextSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (selectedSource != SearchSource.SOUNDCLOUD) {
+                            Button(
+                                onClick = {
+                                    searchViewModel.updateSelectedSource(SearchSource.SOUNDCLOUD)
+                                    if (searchQuery.isNotBlank()) {
+                                        searchViewModel.performSearchNow(searchQuery, SearchSource.SOUNDCLOUD)
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryAccent),
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Text("Try SoundCloud", color = ObsidianBlack, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        if (selectedSource != SearchSource.YOUTUBE) {
+                            Button(
+                                onClick = {
+                                    searchViewModel.updateSelectedSource(SearchSource.YOUTUBE)
+                                    if (searchQuery.isNotBlank()) {
+                                        searchViewModel.performSearchNow(searchQuery, SearchSource.YOUTUBE)
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryAccent),
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Text("Try YouTube", color = ObsidianBlack, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
             } else {
                 TrackList(
