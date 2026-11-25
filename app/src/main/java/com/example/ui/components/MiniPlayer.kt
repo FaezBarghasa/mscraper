@@ -1,22 +1,27 @@
 package com.example.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,16 +29,26 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import coil.compose.AsyncImage
-import com.example.ui.theme.DeepVoid
+import com.example.ui.theme.*
 import com.example.viewmodel.MusicViewModel
 
+/**
+ * Q4 2026 Frosted Glass Floating MiniPlayer
+ * Features:
+ * - Ultra-clean 60.dp height with 16.dp rounded corners
+ * - Ambient artwork color tint over dark obsidian glass
+ * - Horizontal swipe-to-skip with haptic feedback
+ * - Interactive favorite & play/pause buttons
+ * - Slim hairline progress bar indicator at bottom
+ */
 @Composable
 fun MiniPlayer(
     viewModel: MusicViewModel,
@@ -43,14 +58,19 @@ fun MiniPlayer(
     val currentTrack by viewModel.currentTrack.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
     val progress by viewModel.playbackProgress.collectAsState()
-    val accentColor by viewModel.themePrimary.collectAsState()
-    val secColor by viewModel.themeSecondary.collectAsState()
+    val favoriteTracks by viewModel.favoriteTracks.collectAsState()
+    val isFavorite = remember(currentTrack, favoriteTracks) {
+        currentTrack?.let { track -> favoriteTracks.any { it.id == track.id } } ?: false
+    }
     val haptic = LocalHapticFeedback.current
+
+    val ambientPalette = rememberAmbientPalette(currentTrack?.imageUrl)
+    val accentColor = ambientPalette.dominant
 
     AnimatedVisibility(
         visible = isVisible && currentTrack != null,
         enter = slideInVertically(
-            animationSpec = spring(dampingRatio = 0.78f, stiffness = 380f),
+            animationSpec = spring(dampingRatio = 0.82f, stiffness = 400f),
             initialOffsetY = { it }
         ),
         exit = slideOutVertically(
@@ -61,204 +81,177 @@ fun MiniPlayer(
         currentTrack?.let { track ->
             var swipeOffset by remember { mutableFloatStateOf(0f) }
 
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 8.dp)
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
                     .shadow(
-                        elevation = 12.dp,
-                        shape = RoundedCornerShape(20.dp),
+                        elevation = 16.dp,
+                        shape = RoundedCornerShape(16.dp),
                         ambientColor = accentColor.copy(alpha = 0.35f),
-                        spotColor = accentColor
+                        spotColor = accentColor.copy(alpha = 0.45f)
                     )
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(com.example.ui.theme.SurfaceElevated.copy(alpha = 0.94f))
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                SurfaceElevated.copy(alpha = 0.95f),
+                                ObsidianBlack.copy(alpha = 0.98f)
+                            )
+                        )
+                    )
                     .border(
                         width = 1.dp,
                         brush = Brush.linearGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.22f),
-                                Color.Transparent,
-                                accentColor.copy(alpha = 0.38f)
+                                Color.White.copy(alpha = 0.14f),
+                                accentColor.copy(alpha = 0.35f),
+                                Color.White.copy(alpha = 0.05f)
                             )
                         ),
-                        shape = RoundedCornerShape(20.dp)
+                        shape = RoundedCornerShape(16.dp)
                     )
+                    .clickable { onNavigateToNowPlaying() }
                     .pointerInput(track.id) {
                         detectHorizontalDragGestures(
                             onDragEnd = {
-                                if (swipeOffset < -80f) {
+                                if (swipeOffset < -60f) {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     viewModel.nextTrack()
-                                } else if (swipeOffset > 80f) {
+                                } else if (swipeOffset > 60f) {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     viewModel.previousTrack()
                                 }
                                 swipeOffset = 0f
                             },
                             onDragCancel = { swipeOffset = 0f },
-                            onHorizontalDrag = { _, dragAmount ->
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
                                 swipeOffset += dragAmount
                             }
                         )
                     }
-                    .clickable { onNavigateToNowPlaying() }
             ) {
-                // Animated Progress Bar
-                val animatedProgress by animateFloatAsState(
-                    targetValue = progress,
-                    animationSpec = spring(dampingRatio = 0.9f, stiffness = 500f),
-                    label = "MiniPlayerProgress"
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(2.5.dp)
-                        .background(Color.White.copy(alpha = 0.08f))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(animatedProgress)
-                            .height(2.5.dp)
-                            .background(Brush.horizontalGradient(listOf(accentColor, secColor)))
-                    )
-                }
-
+                // Main Row Content
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                        .height(64.dp)
+                        .padding(horizontal = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (track.imageUrl.isNotEmpty()) {
+                    // Album Cover Thumbnail
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(SurfaceHigh),
+                        contentAlignment = Alignment.Center
+                    ) {
                         AsyncImage(
                             model = track.imageUrl,
-                            contentDescription = "Album Art",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(10.dp))
+                            contentDescription = track.title,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
                         )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(DeepVoid),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.MusicNote,
-                                contentDescription = null,
-                                tint = accentColor,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
                     }
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    Column(modifier = Modifier.weight(1f)) {
+                    // Track Metadata
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 4.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
                         Text(
                             text = track.title,
-                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.White,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.basicMarquee()
                         )
                         Spacer(modifier = Modifier.height(2.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = track.artist,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = accentColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier
-                                    .weight(1f, fill = false)
-                                    .basicMarquee()
-                            )
-                            if (isPlaying) {
-                                Spacer(modifier = Modifier.width(8.dp))
-                                StereoPeakMeter(accentColor)
-                            }
-                        }
+                        Text(
+                            text = track.artist,
+                            color = TextSecondary,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    // Action: Favorite Button
+                    IconButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            viewModel.toggleFavorite(track)
+                        },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Favorite",
+                            tint = if (isFavorite) ElectricRed else TextTertiary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
 
+                    // Action: Play / Pause Button
                     IconButton(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             viewModel.togglePlayback()
                         },
                         modifier = Modifier
-                            .size(48.dp)
-                            .background(accentColor.copy(alpha = 0.14f), CircleShape)
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(accentColor.copy(alpha = 0.20f))
                     ) {
                         Icon(
-                            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = if (isPlaying) "Pause" else "Play",
                             tint = accentColor,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(4.dp))
-
+                    // Action: Next Button
                     IconButton(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             viewModel.nextTrack()
                         },
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(38.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.SkipNext,
-                            contentDescription = "Skip Next",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                            imageVector = Icons.Default.SkipNext,
+                            contentDescription = "Next Track",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
-            }
-        }
-    }
-}
 
-@Composable
-fun StereoPeakMeter(accentColor: Color) {
-    val barDurations = remember { listOf(340, 480, 390, 520, 420) }
-    Row(
-        modifier = Modifier.height(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.Bottom
-    ) {
-        val infiniteTransition = rememberInfiniteTransition(label = "PeakMeter")
-        for (i in 0 until 5) {
-            val duration = barDurations[i]
-            val delay = (0..200).random()
-            val heightPercent by infiniteTransition.animateFloat(
-                initialValue = 0.2f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(
-                        durationMillis = duration,
-                        delayMillis = delay,
-                        easing = FastOutSlowInEasing
-                    ),
-                    repeatMode = RepeatMode.Reverse
-                )
-            )
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .fillMaxHeight(heightPercent)
-                    .background(accentColor)
-            )
+                // Sleek bottom hairline playback progress
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                        .align(Alignment.BottomStart)
+                        .background(Color.White.copy(alpha = 0.08f))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
+                            .fillMaxHeight()
+                            .background(accentColor)
+                    )
+                }
+            }
         }
     }
 }

@@ -22,24 +22,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.ui.theme.CyberCyan
-import com.example.ui.theme.DeepVoid
-import com.example.ui.theme.HoloBg
-import com.example.ui.theme.NeonMagenta
-import com.example.ui.theme.TextGray
+import com.example.ui.theme.*
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector?) {
-    object Discovery : Screen("discovery", "HOME", Icons.Filled.Home)
-    object Search : Screen("search", "SEARCH", Icons.Filled.Search)
-    object Library : Screen("library", "LIBRARY", Icons.Filled.LibraryMusic)
-    object Favorites : Screen("favorites", "FAVORITES", Icons.Filled.Favorite)
-    object Settings : Screen("settings", "SETTINGS", Icons.Filled.Settings)
+    object Discovery : Screen("discovery", "Home", Icons.Filled.Home)
+    object Search : Screen("search", "Search", Icons.Filled.Search)
+    object Library : Screen("library", "Library", Icons.Filled.LibraryMusic)
+    object Favorites : Screen("favorites", "Favorites", Icons.Filled.Favorite)
+    object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
     object NowPlaying : Screen("now_playing", "Now Playing", null)
     object Equalizer : Screen("equalizer", "Equalizer", null)
     object Playlist : Screen("playlist", "Playlist", null)
@@ -56,8 +54,15 @@ val bottomNavItems = listOf(
     Screen.Settings
 )
 
+/**
+ * Q4 2026 Floating Frosted Capsule Bottom Navigation Bar
+ * Features:
+ * - Floating capsule pill above Android gesture / navigation insets
+ * - Frosted blur background with subtle hairline white highlight
+ * - Active icon pill indicator with spring accent transitions
+ */
 @Composable
-fun BottomNavigationBar(navController: NavController, accentColor: Color = NeonMagenta) {
+fun BottomNavigationBar(navController: NavController, accentColor: Color = PrimaryAccent) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -66,14 +71,20 @@ fun BottomNavigationBar(navController: NavController, accentColor: Color = NeonM
             modifier = Modifier
                 .background(Color.Transparent)
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
             NavigationBar(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(32.dp))
-                    .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(32.dp)),
-                containerColor = com.example.ui.theme.SurfaceElevated.copy(alpha = 0.92f),
-                tonalElevation = 8.dp
+                    .shadow(
+                        elevation = 20.dp,
+                        shape = RoundedCornerShape(28.dp),
+                        ambientColor = Color.Black.copy(alpha = 0.5f),
+                        spotColor = Color.Black.copy(alpha = 0.8f)
+                    )
+                    .clip(RoundedCornerShape(28.dp))
+                    .border(1.dp, HairlineBorder, RoundedCornerShape(28.dp)),
+                containerColor = SurfaceElevated.copy(alpha = 0.94f),
+                tonalElevation = 0.dp
             ) {
                 bottomNavItems.forEach { item ->
                     val isSelected = currentRoute == item.route
@@ -90,21 +101,23 @@ fun BottomNavigationBar(navController: NavController, accentColor: Color = NeonM
                                 Icon(
                                     imageVector = it,
                                     contentDescription = item.title,
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                         },
                         label = {
                             Text(
                                 text = item.title,
-                                fontSize = 10.sp,
-                                color = if (isSelected) accentColor else TextGray
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                             )
                         },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = accentColor,
-                            unselectedIconColor = TextGray,
-                            indicatorColor = Color.Transparent
+                            selectedTextColor = accentColor,
+                            unselectedIconColor = TextTertiary,
+                            unselectedTextColor = TextTertiary,
+                            indicatorColor = accentColor.copy(alpha = 0.14f)
                         )
                     )
                 }
