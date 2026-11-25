@@ -88,7 +88,12 @@ object MediaApiManager {
     }
 
     suspend fun getStreamUrl(videoId: String): String? = try {
-        ffiApi.getStreamUrl(videoId, AudioSource.YOU_TUBE_MUSIC)
+        val source = if (videoId.contains("soundcloud.com") || videoId.all { it.isDigit() }) {
+            AudioSource.SOUND_CLOUD
+        } else {
+            AudioSource.YOU_TUBE_MUSIC
+        }
+        ffiApi.getStreamUrl(videoId, source)
     } catch (e: Exception) {
         null
     }

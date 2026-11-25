@@ -121,6 +121,11 @@ impl QuicClient {
             .map_err(|e| e.to_string())?;
         response.finish().await.map_err(|e| e.to_string())?;
 
+        let resp_head = response.recv_response().await.map_err(|e| e.to_string())?;
+        if !resp_head.status().is_success() {
+            return Err(format!("HTTP/3 error status: {}", resp_head.status()));
+        }
+
         let mut total_written = 0u64;
         while let Some(mut chunk) = response.recv_data().await.map_err(|e| e.to_string())? {
             let chunk_bytes = chunk.copy_to_bytes(chunk.remaining());
@@ -187,6 +192,11 @@ impl QuicClient {
             .map_err(|e| e.to_string())?;
         response.finish().await.map_err(|e| e.to_string())?;
 
+        let resp_head = response.recv_response().await.map_err(|e| e.to_string())?;
+        if !resp_head.status().is_success() {
+            return Err(format!("HTTP/3 error status: {}", resp_head.status()));
+        }
+
         let mut body_bytes = Vec::new();
         while let Some(mut chunk) = response.recv_data().await.map_err(|e| e.to_string())? {
             let chunk_bytes = chunk.copy_to_bytes(chunk.remaining());
@@ -197,7 +207,12 @@ impl QuicClient {
     }
 
     async fn fetch_h2(&self, url: &str) -> Result<Bytes, MediaError> {
-        let resp = self.fallback_client.get(url).send().await?;
+        let resp = self
+            .fallback_client
+            .get(url)
+            .send()
+            .await?
+            .error_for_status()?;
         let bytes = resp.bytes().await?;
         Ok(bytes)
     }

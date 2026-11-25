@@ -279,6 +279,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private var audioEqualizer: android.media.audiofx.Equalizer? = null
     private var audioBassBoost: android.media.audiofx.BassBoost? = null
     private var audioVirtualizer: android.media.audiofx.Virtualizer? = null
+    private var media3Session: androidx.media3.session.MediaSession? = null
 
     private val _spatialAudio = MutableStateFlow(false)
     val spatialAudio: StateFlow<Boolean> = _spatialAudio.asStateFlow()
@@ -493,6 +494,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 delay(250L)
             }
+        }
+
+        // Attach MediaSession for lockscreen & system media controls
+        try {
+            media3Session = androidx.media3.session.MediaSession.Builder(application, player).build()
+        } catch (_: Exception) {
+            media3Session = null
         }
 
         // Attach audio effects if session ID is already assigned
@@ -859,6 +867,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         releaseAudioEffects()
+        try {
+            media3Session?.release()
+        } catch (_: Exception) {}
+        media3Session = null
         player.release()
     }
 
