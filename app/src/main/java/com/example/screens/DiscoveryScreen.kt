@@ -37,6 +37,8 @@ import com.example.model.Track
 import com.example.ui.theme.*
 import com.example.viewmodel.MusicViewModel
 
+import androidx.compose.material.icons.filled.Equalizer
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
@@ -505,7 +507,7 @@ fun SpeedDialGrid(
             SpeedDialItem(
                 title = "Equalizer",
                 subtitle = "DSP Studio",
-                icon = Icons.Default.GraphicEq,
+                icon = Icons.Default.Equalizer,
                 gradient = listOf(Color(0xFFE11D48), Color(0xFFFB923C)),
                 modifier = Modifier.weight(1f),
                 onClick = { navController.navigate("equalizer") }
