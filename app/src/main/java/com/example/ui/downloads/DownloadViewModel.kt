@@ -11,11 +11,12 @@ import kotlinx.coroutines.flow.StateFlow
 class DownloadViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db = AppDatabase.getDatabase(application)
-    val downloadManager = DownloadManager(
-        trackDao = db.trackDao(),
-        scope = viewModelScope,
-        context = application
-    )
+    val downloadManager: DownloadManager = (application as? com.example.MscraperApplication)?.downloadManager
+        ?: DownloadManager(
+            trackDao = db.trackDao(),
+            scope = viewModelScope,
+            context = application
+        )
 
     val tasks: StateFlow<List<DownloadJob>> = downloadManager.jobs
 

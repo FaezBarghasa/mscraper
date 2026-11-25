@@ -34,7 +34,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val playlistTrackDao = db.playlistTrackDao()
 
     // Engines & Services (Phases 1, 2, 4, 5, 6)
-    val downloadManager = com.example.core.DownloadManager(trackDao, viewModelScope, application)
+    val downloadManager: com.example.core.DownloadManager =
+        (application as? com.example.MscraperApplication)?.downloadManager
+            ?: com.example.core.DownloadManager(trackDao, viewModelScope, application)
     val libraryScanner = com.example.core.LibraryScanner(trackDao, application)
     val duplicateManager = com.example.core.DuplicateManager(trackDao, application)
     val sharingService = com.example.core.SharingService(application)

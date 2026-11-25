@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class DownloadManager(
     private val trackDao: TrackDao,
@@ -23,7 +24,7 @@ class DownloadManager(
     private val _jobs = MutableStateFlow<List<DownloadJob>>(emptyList())
     val jobs: StateFlow<List<DownloadJob>> = _jobs.asStateFlow()
 
-    private val activeJobs = mutableMapOf<String, Job>()
+    private val activeJobs = ConcurrentHashMap<String, Job>()
     private val ffiApi = com.example.core.ffi.MmDlpApi()
 
     fun startDownload(url: String, targetFormat: String, targetBitrate: String) {
@@ -78,15 +79,18 @@ class DownloadManager(
                     list.map { j -> if (j.id == jobId) j.copy(progress = 0.8f, downloadSpeed = "Saving...") else j }
                 }
 
-                val fileName = "${title}.${targetFormat.lowercase()}"
-                val mimeType = when (targetFormat.lowercase()) {
-                    "flac" -> "audio/flac"
-                    "wav" -> "audio/wav"
-                    else -> "audio/mpeg"
-                }
-
                 val tempFile = File(tempFilePath)
                 val fileSize = if (tempFile.exists()) tempFile.length() else 0L
+                val actualExt = tempFile.extension.lowercase().ifBlank { targetFormat.lowercase() }
+                val safeTitle = PublicStorageManager.sanitizeFileName(title).ifBlank { jobId }
+                val fileName = "${safeTitle}.${actualExt}"
+                val mimeType = when (actualExt) {
+                    "flac" -> "audio/flac"
+                    "wav" -> "audio/wav"
+                    "m4a" -> "audio/mp4"
+                    "webm" -> "audio/webm"
+                    else -> "audio/mpeg"
+                }
 
                 val publicUri = PublicStorageManager.moveToPublicDownloads(
                     context = context,
@@ -125,10 +129,12 @@ class DownloadManager(
                     }
                 }
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _jobs.update { list ->
                     list.map { j ->
-                        if (j.id == jobId || j.url == url) {
+                        if (j.id == jobId) {
                             j.copy(
                                 status = DownloadStatus.ERROR,
                                 error = e.localizedMessage ?: "Download failed"
@@ -136,9 +142,11 @@ class DownloadManager(
                         } else j
                     }
                 }
+            } finally {
+                activeJobs.remove(jobId)
             }
         }
-        activeJobs[url] = job
+        activeJobs[jobId] = job
     }
 
     private fun insertTrackIntoDb(

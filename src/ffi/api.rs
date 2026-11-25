@@ -199,12 +199,7 @@ impl MmDlpApi {
             } else {
                 url.clone()
             };
-            let stream = self
-                .youtube_extractor
-                .extract_video_info(&video_id)
-                .await
-                .map(|(_meta, s)| s)
-                .unwrap_or_else(|_| url.clone());
+            let (_meta, stream) = self.youtube_extractor.extract_video_info(&video_id).await?;
             (video_id, stream)
         } else {
             use std::hash::{DefaultHasher, Hasher};
@@ -255,24 +250,41 @@ impl MmDlpApi {
     }
 
     pub fn export_playlist_xml(&self, playlist: Playlist) -> Result<String, EngineError> {
+        fn escape_xml(s: &str) -> String {
+            s.replace('&', "&amp;")
+                .replace('<', "&lt;")
+                .replace('>', "&gt;")
+                .replace('"', "&quot;")
+                .replace('\'', "&apos;")
+        }
+
         let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<playlist>\n");
-        xml.push_str(&format!("  <id>{}</id>\n", playlist.id));
-        xml.push_str(&format!("  <name>{}</name>\n", playlist.name));
+        xml.push_str(&format!("  <id>{}</id>\n", escape_xml(&playlist.id)));
+        xml.push_str(&format!("  <name>{}</name>\n", escape_xml(&playlist.name)));
         if let Some(desc) = &playlist.description {
-            xml.push_str(&format!("  <description>{}</description>\n", desc));
+            xml.push_str(&format!(
+                "  <description>{}</description>\n",
+                escape_xml(desc)
+            ));
         }
         xml.push_str("  <tracks>\n");
         for track in &playlist.tracks {
             xml.push_str("    <track>\n");
-            xml.push_str(&format!("      <id>{}</id>\n", track.id));
-            xml.push_str(&format!("      <title>{}</title>\n", track.title));
-            xml.push_str(&format!("      <artist>{}</artist>\n", track.artist));
+            xml.push_str(&format!("      <id>{}</id>\n", escape_xml(&track.id)));
+            xml.push_str(&format!(
+                "      <title>{}</title>\n",
+                escape_xml(&track.title)
+            ));
+            xml.push_str(&format!(
+                "      <artist>{}</artist>\n",
+                escape_xml(&track.artist)
+            ));
             if let Some(album) = &track.album {
-                xml.push_str(&format!("      <album>{}</album>\n", album));
+                xml.push_str(&format!("      <album>{}</album>\n", escape_xml(album)));
             }
             xml.push_str(&format!(
                 "      <source_url>{}</source_url>\n",
-                track.source_url
+                escape_xml(&track.source_url)
             ));
             xml.push_str(&format!("      <duration>{}</duration>\n", track.duration));
             xml.push_str("    </track>\n");
