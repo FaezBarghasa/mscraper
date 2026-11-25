@@ -3,7 +3,7 @@ package com.example.ui.search
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -107,9 +107,9 @@ fun SearchScreen(
                         accentColor = accentColor
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                actions = {
+                    IconButton(onClick = { navController.navigate("downloads") }) {
+                        Icon(Icons.Default.Download, contentDescription = "Downloads", tint = accentColor)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -145,6 +145,24 @@ fun SearchScreen(
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = accentColor)
+                }
+            } else if (searchResults.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.Search, contentDescription = null, tint = accentColor.copy(alpha = 0.35f), modifier = Modifier.size(56.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = if (searchQuery.isBlank()) "Search YouTube Music or SoundCloud" else "No tracks found",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (searchQuery.isBlank()) "Type a track, artist, or genre above." else "Check your network connection or try another query.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextGray
+                        )
+                    }
                 }
             } else {
                 val uiTracks = searchResults

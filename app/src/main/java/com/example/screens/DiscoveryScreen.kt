@@ -71,44 +71,47 @@ fun DiscoveryScreen(
         isLoadingTrending = true
         try {
             val ffiApi = com.example.core.ffi.MmDlpApi()
-            val tResults = ffiApi.search("Trending Synthwave", com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC)
-            if (tResults.isNotEmpty()) {
-                trendingTracks = tResults.map { meta ->
-                    val durationStr = meta.durationSeconds?.let { s ->
-                        val totalSecs = s.toLong()
-                        val m = totalSecs / 60
-                        val sec = totalSecs % 60
-                        String.format(java.util.Locale.US, "%d:%02d", m, sec)
-                    } ?: "--:--"
-
-                    Track(
-                        id = meta.trackId,
-                        title = meta.title,
-                        artist = meta.artist,
-                        duration = durationStr,
-                        imageUrl = meta.albumArtUrl ?: "",
-                        filePath = ""
-                    )
+            kotlinx.coroutines.coroutineScope {
+                val trendingDeferred = async {
+                    ffiApi.search("Trending Synthwave", com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC)
                 }
-            }
-            val rResults = ffiApi.search("Electronic New Releases", com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC)
-            if (rResults.isNotEmpty()) {
-                releaseTracks = rResults.map { meta ->
-                    val durationStr = meta.durationSeconds?.let { s ->
-                        val totalSecs = s.toLong()
-                        val m = totalSecs / 60
-                        val sec = totalSecs % 60
-                        String.format(java.util.Locale.US, "%d:%02d", m, sec)
-                    } ?: "--:--"
+                val releaseDeferred = async {
+                    ffiApi.search("Electronic New Releases", com.example.core.ffi.AudioSource.YOU_TUBE_MUSIC)
+                }
+                val tResults = trendingDeferred.await()
+                val rResults = releaseDeferred.await()
 
-                    Track(
-                        id = meta.trackId,
-                        title = meta.title,
-                        artist = meta.artist,
-                        duration = durationStr,
-                        imageUrl = meta.albumArtUrl ?: "",
-                        filePath = ""
-                    )
+                if (tResults.isNotEmpty()) {
+                    trendingTracks = tResults.map { meta ->
+                        val durationStr = meta.durationSeconds?.let { s ->
+                            val totalSecs = s.toLong()
+                            String.format(java.util.Locale.US, "%d:%02d", totalSecs / 60, totalSecs % 60)
+                        } ?: "--:--"
+                        Track(
+                            id = meta.trackId,
+                            title = meta.title,
+                            artist = meta.artist,
+                            duration = durationStr,
+                            imageUrl = meta.albumArtUrl ?: "",
+                            filePath = ""
+                        )
+                    }
+                }
+                if (rResults.isNotEmpty()) {
+                    releaseTracks = rResults.map { meta ->
+                        val durationStr = meta.durationSeconds?.let { s ->
+                            val totalSecs = s.toLong()
+                            String.format(java.util.Locale.US, "%d:%02d", totalSecs / 60, totalSecs % 60)
+                        } ?: "--:--"
+                        Track(
+                            id = meta.trackId,
+                            title = meta.title,
+                            artist = meta.artist,
+                            duration = durationStr,
+                            imageUrl = meta.albumArtUrl ?: "",
+                            filePath = ""
+                        )
+                    }
                 }
             }
         } catch (_: Exception) {
@@ -136,7 +139,7 @@ fun DiscoveryScreen(
             .background(DeepVoid)
             .verticalScroll(rememberScrollState())
     ) {
-        TopBar(accentColor, onOpenDrawer)
+        TopBar(accentColor, onOpenDrawer, onDownloadsClick = { navController.navigate("downloads") })
         
         val recentlyPlayed by viewModel.recentlyPlayed.collectAsState()
         if (recentlyPlayed.isNotEmpty()) {
@@ -417,7 +420,8 @@ fun GenreFilterBar(
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(genres) { genre ->
@@ -443,7 +447,15 @@ fun GenreFilterBar(
 }
 
 @Composable
-fun TopBar(accentColor: Color, onMenuClick: () -> Unit) {
+fun TopBar(accentColor: Color, onMenuClick: () -> Unit, onDownloadsClick: () -> Unit = {}) {
+    val greeting = remember {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        when {
+            hour < 12 -> "GOOD MORNING"
+            hour < 17 -> "GOOD AFTERNOON"
+            else -> "GOOD EVENING"
+        }
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -487,36 +499,27 @@ fun TopBar(accentColor: Color, onMenuClick: () -> Unit) {
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
-                    text = "GOOD EVENING",
+                    text = greeting,
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Pilot_2026",
+                    text = "Audio Workstation",
                     style = MaterialTheme.typography.labelMedium,
                     color = accentColor
                 )
             }
         }
         
-        Box(
+        IconButton(
+            onClick = onDownloadsClick,
             modifier = Modifier
-                .size(40.dp)
+                .size(44.dp)
                 .clip(CircleShape)
                 .background(Color.White.copy(alpha = 0.05f))
-                .clickable { },
-            contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = Color.White)
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(PrimaryGreen)
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-6).dp, y = 6.dp)
-            )
+            Icon(Icons.Filled.Download, contentDescription = "Downloads", tint = accentColor)
         }
     }
 }
@@ -561,6 +564,16 @@ fun FeaturedSection(
                     style = MaterialTheme.typography.bodySmall,
                     color = TextGray
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { navController.navigate(Screen.Search.route) },
+                    colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Icon(Icons.Filled.Search, contentDescription = null, tint = DeepVoid, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("SEARCH ONLINE", color = DeepVoid, fontWeight = FontWeight.Bold)
+                }
             }
         }
         return
@@ -672,7 +685,16 @@ fun TrendingSection(items: List<Track>, viewModel: MusicViewModel, navController
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("TRENDING NOW", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("VIEW ALL", style = MaterialTheme.typography.labelSmall, color = PrimaryGreen, fontWeight = FontWeight.Bold)
+            Text(
+                "VIEW ALL",
+                style = MaterialTheme.typography.labelSmall,
+                color = viewModel.themePrimary.collectAsState().value,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { navController.navigate(Screen.Search.route) }
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
         }
         
         if (items.isEmpty()) {

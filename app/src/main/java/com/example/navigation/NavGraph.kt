@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -67,13 +68,14 @@ fun MainAppScreen() {
     ) {
         Scaffold(
             bottomBar = {
+                val accentColor by viewModel.themePrimary.collectAsState()
                 Column {
                     MiniPlayer(
                         viewModel = viewModel,
                         onNavigateToNowPlaying = { navController.navigate(Screen.NowPlaying.route) },
                         isVisible = isBottomBarVisible
                     )
-                    BottomNavigationBar(navController)
+                    BottomNavigationBar(navController, accentColor = accentColor)
                 }
             }
         ) { innerPadding ->

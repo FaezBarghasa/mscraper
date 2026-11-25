@@ -36,6 +36,8 @@ impl QuicClient {
 
         let fallback_client = ReqwestClient::builder()
             .timeout(std::time::Duration::from_secs(30))
+            .tcp_nodelay(true)
+            .pool_max_idle_per_host(8)
             .build()
             .map_err(MediaError::NetworkError)?;
 
@@ -63,16 +65,30 @@ impl QuicClient {
         }
 
         // Stream via reqwest directly without full in-memory buffering
-        let mut resp = self.fallback_client.get(url).send().await?;
-        let mut total_written = 0u64;
+        let resp_res = async {
+            let mut resp = self
+                .fallback_client
+                .get(url)
+                .send()
+                .await?
+                .error_for_status()?;
+            let mut total_written = 0u64;
 
-        while let Some(chunk) = resp.chunk().await? {
-            file.write_all(&chunk).await?;
-            total_written += chunk.len() as u64;
+            while let Some(chunk) = resp.chunk().await? {
+                file.write_all(&chunk).await?;
+                total_written += chunk.len() as u64;
+            }
+
+            file.flush().await?;
+            Ok::<u64, MediaError>(total_written)
         }
+        .await;
 
-        file.flush().await?;
-        Ok(total_written)
+        if resp_res.is_err() {
+            drop(file);
+            let _ = tokio::fs::remove_file(dest_path).await;
+        }
+        resp_res
     }
 
     async fn stream_h3_to_file(

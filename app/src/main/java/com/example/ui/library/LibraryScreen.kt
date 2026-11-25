@@ -68,7 +68,7 @@ fun LibraryScreen(
     val favoriteTrackIds = favoriteTracks.map { it.id }.toSet()
     var selectedTabIndex by remember { mutableStateOf(0) }
     var trackToEdit by remember { mutableStateOf<Track?>(null) }
-    val tabs = listOf("ALL TRACKS", "GENRES", "FAVORITES", "PLAYLISTS")
+    val tabs = listOf("TRACKS", "GENRES", "LIKED", "LISTS")
 
     val folderPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()
@@ -138,9 +138,11 @@ fun LibraryScreen(
                     text = {
                         Text(
                             text = title,
-                            style = MaterialTheme.typography.titleSmall,
+                            style = MaterialTheme.typography.labelMedium,
                             color = if (selectedTabIndex == index) accentColor else TextGray,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 )

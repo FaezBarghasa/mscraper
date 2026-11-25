@@ -71,8 +71,8 @@ fun SettingsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
+                .padding(padding),
+            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 104.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
@@ -117,6 +117,21 @@ fun SettingsScreen(
                     onCheckedChange = { musicViewModel.setEqualizerEnabled(it) },
                     accentColor = accentColor
                 )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { navController.navigate(com.example.navigation.Screen.Equalizer.route) }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Open 5-Band DSP Equalizer", color = Color.White, style = MaterialTheme.typography.bodyLarge)
+                        Text("Adjust frequency faders, presets, and bass boost", color = TextGray, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Open", tint = accentColor, modifier = Modifier.size(18.dp))
+                }
             }
 
             item {

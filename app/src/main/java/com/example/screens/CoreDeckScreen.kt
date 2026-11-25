@@ -73,7 +73,7 @@ fun CoreDeckScreen(navController: NavController, viewModel: MusicViewModel = vie
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                         }
                     },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = DeepVoid
                     )
                 )

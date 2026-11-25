@@ -57,7 +57,7 @@ val bottomNavItems = listOf(
 )
 
 @Composable
-fun BottomNavigationBar(navController: NavController) {
+fun BottomNavigationBar(navController: NavController, accentColor: Color = NeonMagenta) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -98,11 +98,11 @@ fun BottomNavigationBar(navController: NavController) {
                             Text(
                                 text = item.title,
                                 fontSize = 10.sp,
-                                color = if (isSelected) NeonMagenta else TextGray
+                                color = if (isSelected) accentColor else TextGray
                             )
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = NeonMagenta,
+                            selectedIconColor = accentColor,
                             unselectedIconColor = TextGray,
                             indicatorColor = Color.Transparent
                         )

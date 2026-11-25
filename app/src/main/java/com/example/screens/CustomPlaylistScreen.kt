@@ -259,6 +259,41 @@ fun SidebarContent(
         }
 
         HorizontalDivider(color = Color.White.copy(alpha = 0.08f), thickness = 1.dp)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "SYSTEM TOOLS",
+            style = MaterialTheme.typography.labelSmall,
+            color = TextGray,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+
+        listOf(
+            Triple("DSP Equalizer", Icons.Default.GraphicEq, com.example.navigation.Screen.Equalizer.route),
+            Triple("Downloads", Icons.Default.Download, "downloads"),
+            Triple("Core Deck", Icons.Default.Tune, com.example.navigation.Screen.CoreDeck.route)
+        ).forEach { (label, icon, route) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable {
+                        onCloseDrawer()
+                        navController.navigate(route)
+                    }
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(imageVector = icon, contentDescription = label, tint = accentColor, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(text = label, style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.Medium)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        HorizontalDivider(color = Color.White.copy(alpha = 0.08f), thickness = 1.dp)
         Spacer(modifier = Modifier.height(16.dp))
 
         // Create Playlist Action

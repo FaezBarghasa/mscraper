@@ -25,7 +25,10 @@ class MainActivity : ComponentActivity() {
         System.setProperty("jna.boot.library.path", applicationInfo.nativeLibraryDir)
 
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        )
 
         // Initialize settings and network config asynchronously
         val settingsRepository = SettingsRepository(this)
