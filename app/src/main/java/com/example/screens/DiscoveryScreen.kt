@@ -1,5 +1,7 @@
 package com.example.screens
 
+import kotlinx.coroutines.async
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
